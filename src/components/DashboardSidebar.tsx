@@ -1,5 +1,6 @@
 import { FileUpload } from "@/components/FileUpload";
 import { DatasetInfo } from "@/components/DatasetInfo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { DatasetMeta } from "@/services/api";
 import { Download, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,9 @@ export function DashboardSidebar({
           <BarChart3 className="w-4 h-4 text-primary" />
         </div>
         <h1 className="text-sm font-bold gradient-text">DataLens</h1>
+        <div className="ml-auto">
+          <ThemeToggle />
+        </div>
       </div>
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-6">
