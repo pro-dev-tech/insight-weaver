@@ -1,5 +1,6 @@
 import { FileUpload } from "@/components/FileUpload";
 import { DatasetInfo } from "@/components/DatasetInfo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { DatasetMeta } from "@/services/api";
 import { Download, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
