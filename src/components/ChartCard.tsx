@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { Download } from "lucide-react";
+import { useRef, useState } from "react";
+import { Download, Maximize2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import {
@@ -8,6 +8,7 @@ import {
   Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { ChartConfig } from "@/services/api";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const COLORS = [
   "hsl(var(--chart-1))",
@@ -18,21 +19,6 @@ const COLORS = [
   "hsl(var(--chart-6))",
 ];
 
-function useChartTheme() {
-  const style = getComputedStyle(document.documentElement);
-  const get = (v: string) => {
-    const val = style.getPropertyValue(v).trim();
-    return val ? `hsl(${val})` : undefined;
-  };
-  return {
-    grid: get("--chart-grid") || "#e5e7eb",
-    text: get("--chart-text") || "#374151",
-    tooltipBg: get("--chart-tooltip-bg") || "#ffffff",
-    tooltipBorder: get("--chart-tooltip-border") || "#e5e7eb",
-    tooltipText: get("--chart-tooltip-text") || "#111827",
-    bg: get("--background") || "#ffffff",
-  };
-}
 
 interface ChartCardProps {
   config: ChartConfig;
@@ -40,6 +26,7 @@ interface ChartCardProps {
 
 export function ChartCard({ config }: ChartCardProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const handleDownload = async () => {
     if (!ref.current) return;
@@ -57,98 +44,128 @@ export function ChartCard({ config }: ChartCardProps) {
   };
 
   return (
-    <div ref={ref} className="glass-card overflow-hidden">
-      <div className="p-3 border-b border-border/50 flex items-center justify-between">
-        <div>
-          <h3 className="text-xs font-semibold text-foreground">{config.title}</h3>
-          <p className="text-[10px] text-muted-foreground">{config.description}</p>
+    <>
+      <div ref={ref} className="glass-card overflow-hidden">
+        <div className="p-3 border-b border-border/50 flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-semibold text-foreground">{config.title}</h3>
+            <p className="text-[10px] text-muted-foreground">{config.description}</p>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setExpanded(true)}
+              className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+              title="Expand chart"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleDownload}
+              className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
+              title="Download as PNG"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-        <button
-          onClick={handleDownload}
-          className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors"
-          title="Download as PNG"
-        >
-          <Download className="w-3.5 h-3.5" />
-        </button>
+        <div className="p-2">
+          <ChartRenderer config={config} height={250} />
+        </div>
       </div>
-      <div className="p-2">
-        <ChartRenderer config={config} />
-      </div>
-    </div>
+
+      <Dialog open={expanded} onOpenChange={setExpanded}>
+        <DialogContent className="max-w-4xl w-[90vw] max-h-[85vh] overflow-auto">
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">{config.title}</h3>
+              <p className="text-sm text-muted-foreground">{config.description}</p>
+            </div>
+            <div className="min-h-[500px]">
+              <ChartRenderer config={config} height={500} />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
-function ChartRenderer({ config }: { config: ChartConfig }) {
-  const theme = useChartTheme();
-  const tickStyle = { fontSize: 10, fill: theme.text };
-  const tooltipStyle = {
-    contentStyle: {
-      background: theme.tooltipBg,
-      border: `1px solid ${theme.tooltipBorder}`,
-      borderRadius: "8px",
-      fontSize: "11px",
-      color: theme.tooltipText,
-    },
-  };
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div
+      className="rounded-lg border px-3 py-2 shadow-lg"
+      style={{
+        backgroundColor: "hsl(var(--popover))",
+        borderColor: "hsl(var(--border))",
+        color: "hsl(var(--popover-foreground))",
+      }}
+    >
+      {label && <p className="text-xs font-medium mb-1" style={{ color: "hsl(var(--foreground))" }}>{label}</p>}
+      {payload.map((entry: any, i: number) => (
+        <div key={i} className="flex items-center gap-2 text-xs">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
+          <span style={{ color: "hsl(var(--muted-foreground))" }}>{entry.name || entry.dataKey}:</span>
+          <span className="font-mono font-medium" style={{ color: "hsl(var(--foreground))" }}>
+            {typeof entry.value === "number" ? entry.value.toLocaleString("en-IN") : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+function ChartRenderer({ config, height = 250 }: { config: ChartConfig; height?: number }) {
+  const tickStyle = { fontSize: 10, fill: "hsl(var(--muted-foreground))" };
 
   switch (config.type) {
     case "bar":
     case "histogram":
       return (
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={height}>
           <BarChart data={config.data}>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme.grid} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey={config.xKey} tick={tickStyle} />
             <YAxis tick={tickStyle} />
-            <Tooltip {...tooltipStyle} />
+            <Tooltip content={<CustomTooltip />} />
             <Bar dataKey={config.yKey || "value"} fill={COLORS[0]} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       );
     case "pie":
       return (
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={height}>
           <PieChart>
-            <Pie
-              data={config.data}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={90}
-              innerRadius={45}
-              paddingAngle={2}
-              stroke="none"
-            >
+            <Pie data={config.data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={Math.min(height * 0.35, 120)} innerRadius={Math.min(height * 0.17, 50)} paddingAngle={2} stroke="none">
               {config.data.map((_: any, i: number) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip {...tooltipStyle} />
-            <Legend wrapperStyle={{ fontSize: "10px", color: theme.text }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend wrapperStyle={{ fontSize: "10px", color: "hsl(var(--foreground))" }} />
           </PieChart>
         </ResponsiveContainer>
       );
     case "line":
       return (
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={height}>
           <LineChart data={config.data}>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme.grid} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey={config.xKey} tick={tickStyle} />
             <YAxis tick={tickStyle} />
-            <Tooltip {...tooltipStyle} />
+            <Tooltip content={<CustomTooltip />} />
             <Line type="monotone" dataKey={config.yKey || "value"} stroke={COLORS[0]} strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       );
     case "scatter":
       return (
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={height}>
           <ScatterChart>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme.grid} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey={config.xKey} tick={tickStyle} name={config.xKey} />
             <YAxis dataKey={config.yKey} tick={tickStyle} name={config.yKey} />
-            <Tooltip {...tooltipStyle} />
+            <Tooltip content={<CustomTooltip />} />
             <Scatter data={config.data} fill={COLORS[1]} />
           </ScatterChart>
         </ResponsiveContainer>
@@ -169,18 +186,14 @@ function HeatmapChart({ config }: { config: ChartConfig }) {
           <tr>
             <th className="p-1"></th>
             {keys.map((k) => (
-              <th key={k} className="p-1 text-muted-foreground truncate max-w-[60px]" title={k}>
-                {k.slice(0, 8)}
-              </th>
+              <th key={k} className="p-1 text-muted-foreground truncate max-w-[60px]" title={k}>{k.slice(0, 8)}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {config.data.map((row: any, i: number) => (
             <tr key={i}>
-              <td className="p-1 text-muted-foreground truncate max-w-[60px]" title={row.name}>
-                {row.name?.slice(0, 8)}
-              </td>
+              <td className="p-1 text-muted-foreground truncate max-w-[60px]" title={row.name}>{row.name?.slice(0, 8)}</td>
               {keys.map((k) => {
                 const v = row[k] ?? 0;
                 const abs = Math.abs(v);

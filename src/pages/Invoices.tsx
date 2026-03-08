@@ -1,17 +1,16 @@
 import { useState } from "react";
-import { DEMO_INVOICES } from "@/data/mockData";
+import { useInvoiceData } from "@/contexts/InvoiceDataContext";
 import type { Invoice } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Send, FileText, Filter } from "lucide-react";
+import { Plus, Search, Send, FileText, Filter, MessageCircle, Mail, Phone, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const STATUS_COLORS: Record<string, string> = {
   paid: "bg-accent/10 text-accent border-accent/20",
@@ -22,14 +21,36 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function Invoices() {
-  const [invoices, setInvoices] = useState<Invoice[]>(DEMO_INVOICES);
+  const { invoices, hasData, addManualInvoice, updateInvoice } = useInvoiceData();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
+  const [reminderDialog, setReminderDialog] = useState<Invoice | null>(null);
   const [newInv, setNewInv] = useState({
     customerName: "", customerEmail: "", customerPhone: "",
     invoiceNumber: "", amount: "", dueDate: "",
   });
+
+  if (!hasData) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[60vh]">
+        <Card className="p-8 text-center space-y-4 max-w-md bg-card border-border/50">
+          <FileText className="w-12 h-12 text-muted-foreground/40 mx-auto" />
+          <h2 className="text-lg font-bold text-foreground">No Invoices</h2>
+          <p className="text-sm text-muted-foreground">Upload a file to see your invoices here, or add one manually.</p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => navigate("/upload")} variant="outline" className="gap-2">
+              <Upload className="w-4 h-4" /> Upload File
+            </Button>
+            <Button onClick={() => setAddOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" /> Add Manually
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   const filtered = invoices.filter((inv) => {
     const matchesSearch = inv.customerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -43,8 +64,7 @@ export default function Invoices() {
 
   const handleAddInvoice = () => {
     if (!newInv.customerName || !newInv.invoiceNumber || !newInv.amount || !newInv.dueDate) {
-      toast.error("Fill all required fields");
-      return;
+      toast.error("Fill all required fields"); return;
     }
     const inv: Invoice = {
       id: `INV-${Date.now()}`,
@@ -61,19 +81,39 @@ export default function Invoices() {
       remindersSent: 0,
       createdAt: new Date().toISOString(),
     };
-    setInvoices((prev) => [inv, ...prev]);
+    addManualInvoice(inv);
     setAddOpen(false);
     setNewInv({ customerName: "", customerEmail: "", customerPhone: "", invoiceNumber: "", amount: "", dueDate: "" });
     toast.success("Invoice added");
   };
 
-  const handleSendReminder = (inv: Invoice) => {
-    setInvoices((prev) =>
-      prev.map((i) =>
-        i.id === inv.id ? { ...i, remindersSent: i.remindersSent + 1, lastReminderDate: new Date().toISOString().split("T")[0] } : i
-      )
-    );
-    toast.success(`Reminder sent to ${inv.customerName}`);
+  const handleSendReminder = (inv: Invoice, channel: "whatsapp" | "sms" | "email") => {
+    updateInvoice(inv.id, { remindersSent: inv.remindersSent + 1, lastReminderDate: new Date().toISOString().split("T")[0] });
+
+    if (channel === "whatsapp") {
+      const phone = inv.customerPhone.replace(/[^0-9]/g, "");
+      const upiId = localStorage.getItem("payrecovery_upi_id") || "merchant@upi";
+      const companyName = JSON.parse(localStorage.getItem("payrecovery_user") || "{}").companyName || "Our Company";
+      const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(companyName)}&am=${inv.amount}&cu=INR&tn=Invoice%20${encodeURIComponent(inv.invoiceNumber)}`;
+      const payPageUrl = `${window.location.origin}/pay/${inv.id}`;
+      const msg = `Dear ${inv.customerName},\n\nYour invoice ${inv.invoiceNumber} of Rs ${inv.amount.toLocaleString("en-IN")} is overdue.\n\nPay instantly here:\n${upiLink}\n\nor scan the QR to pay:\n${payPageUrl}`;
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      window.open(url, "_blank");
+      toast.success(`WhatsApp reminder opened for ${inv.customerName}`);
+    } else if (channel === "sms") {
+      const phone = inv.customerPhone.replace(/[^0-9]/g, "");
+      const msg = `Dear ${inv.customerName}, your invoice ${inv.invoiceNumber} of Rs ${inv.amount.toLocaleString("en-IN")} is pending. Please pay at your earliest.`;
+      const url = `sms:${phone}?body=${encodeURIComponent(msg)}`;
+      window.open(url, "_blank");
+      toast.success(`SMS reminder opened for ${inv.customerName}`);
+    } else {
+      const subject = `Payment Reminder - Invoice ${inv.invoiceNumber}`;
+      const body = `Dear ${inv.customerName},\n\nThis is a reminder that your invoice ${inv.invoiceNumber} of Rs ${inv.amount.toLocaleString("en-IN")} dated ${inv.invoiceDate} is pending.\n\nPlease make the payment at your earliest convenience.\n\nThank you.`;
+      const url = `mailto:${inv.customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(url, "_blank");
+      toast.success(`Email reminder opened for ${inv.customerName}`);
+    }
+    setReminderDialog(null);
   };
 
   return (
@@ -81,7 +121,7 @@ export default function Invoices() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Invoices</h1>
-          <p className="text-sm text-muted-foreground">{invoices.length} total invoices</p>
+          <p className="text-sm text-muted-foreground">{invoices.length} total invoices from uploaded data</p>
         </div>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
@@ -102,7 +142,6 @@ export default function Invoices() {
         </Dialog>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 items-center">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -120,13 +159,12 @@ export default function Invoices() {
         </Select>
       </div>
 
-      {/* Table */}
       <Card className="bg-card border-border/50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-secondary/30">
-                {["Invoice #", "Customer", "Amount", "Paid", "Due Date", "Status", "Source", "Reminders", "Actions"].map((h) => (
+                {["Invoice #", "Customer", "Phone", "Email", "Amount", "Paid", "Due Date", "Status", "Reminders", "Actions"].map((h) => (
                   <th key={h} className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">{h}</th>
                 ))}
               </tr>
@@ -138,19 +176,18 @@ export default function Invoices() {
                     <FileText className="w-3 h-3 text-muted-foreground" />{inv.invoiceNumber}
                   </td>
                   <td className="py-2.5 px-3 text-foreground">{inv.customerName}</td>
+                  <td className="py-2.5 px-3 text-xs text-muted-foreground">{inv.customerPhone || "—"}</td>
+                  <td className="py-2.5 px-3 text-xs text-muted-foreground">{inv.customerEmail || "—"}</td>
                   <td className="py-2.5 px-3 font-mono text-foreground">{formatINR(inv.amount)}</td>
                   <td className="py-2.5 px-3 font-mono text-foreground">{formatINR(inv.paidAmount)}</td>
                   <td className="py-2.5 px-3 text-xs text-foreground">{inv.dueDate}</td>
                   <td className="py-2.5 px-3">
-                    <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[inv.status] || ""}`}>
-                      {inv.status}
-                    </Badge>
+                    <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[inv.status] || ""}`}>{inv.status}</Badge>
                   </td>
-                  <td className="py-2.5 px-3 text-xs text-muted-foreground capitalize">{inv.source}</td>
                   <td className="py-2.5 px-3 text-xs text-muted-foreground">{inv.remindersSent}</td>
                   <td className="py-2.5 px-3">
                     {inv.status !== "paid" && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => handleSendReminder(inv)}>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setReminderDialog(inv)}>
                         <Send className="w-3 h-3" /> Remind
                       </Button>
                     )}
@@ -158,12 +195,42 @@ export default function Invoices() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="py-8 text-center text-sm text-muted-foreground">No invoices found</td></tr>
+                <tr><td colSpan={10} className="py-8 text-center text-sm text-muted-foreground">No invoices found</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </Card>
+
+      {/* Reminder channel dialog */}
+      <Dialog open={!!reminderDialog} onOpenChange={() => setReminderDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Send Reminder to {reminderDialog?.customerName}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Invoice {reminderDialog?.invoiceNumber} — {reminderDialog && formatINR(reminderDialog.amount)}
+          </p>
+          <div className="grid grid-cols-1 gap-2 mt-2">
+            {reminderDialog?.customerPhone && (
+              <Button variant="outline" className="gap-2 justify-start" onClick={() => reminderDialog && handleSendReminder(reminderDialog, "whatsapp")}>
+                <MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp (with UPI link & QR)
+              </Button>
+            )}
+            {reminderDialog?.customerPhone && (
+              <Button variant="outline" className="gap-2 justify-start" onClick={() => reminderDialog && handleSendReminder(reminderDialog, "sms")}>
+                <Phone className="w-4 h-4 text-blue-500" /> SMS
+              </Button>
+            )}
+            {reminderDialog?.customerEmail && (
+              <Button variant="outline" className="gap-2 justify-start" onClick={() => reminderDialog && handleSendReminder(reminderDialog, "email")}>
+                <Mail className="w-4 h-4 text-orange-500" /> Email
+              </Button>
+            )}
+            {!reminderDialog?.customerPhone && !reminderDialog?.customerEmail && (
+              <p className="text-sm text-destructive">No contact info available for this customer.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
