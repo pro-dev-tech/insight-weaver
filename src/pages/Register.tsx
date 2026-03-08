@@ -12,7 +12,8 @@ export default function Register() {
     name: "", email: "", password: "", phone: "", companyName: "", companyLocation: "", cinNumber: "",
   });
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const [resending, setResending] = useState(false);
+  const { register, resendConfirmation } = useAuth();
   const navigate = useNavigate();
 
   const update = (key: string, val: string) => setForm((p) => ({ ...p, [key]: val }));

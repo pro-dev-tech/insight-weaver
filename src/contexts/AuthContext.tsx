@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch or create the users row for the current auth user
   const fetchOrCreateProfile = useCallback(async (authUserId: string) => {
     // Check if profile exists
-    const { data, error } = await supabase
+    const { data, error: _error } = await supabase
       .from("users")
       .select("*")
       .eq("auth_user_id", authUserId)
