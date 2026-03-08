@@ -38,6 +38,7 @@ const App = () => (
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/upload" element={<UploadPage />} />
                 <Route path="/analytics" element={<Analytics />} />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
               <Route path="/" element={<Navigate to="/login" replace />} />
