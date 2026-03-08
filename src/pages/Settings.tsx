@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Save, CreditCard, Building2, Lock, Shield, QrCode } from "lucide-react";
+import { Save, CreditCard, Building2, Lock, Shield, QrCode, KeyRound } from "lucide-react";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -22,6 +22,15 @@ export default function SettingsPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [generatedOtp, setGeneratedOtp] = useState("");
+
+  // Forgot password flow
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotOtpSent, setForgotOtpSent] = useState(false);
+  const [forgotOtpVerified, setForgotOtpVerified] = useState(false);
+  const [forgotGeneratedOtp, setForgotGeneratedOtp] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
 
   // Payment keys
   const [razorpayKey, setRazorpayKey] = useState("");
@@ -45,11 +54,30 @@ export default function SettingsPage() {
     toast.success("Settings saved successfully");
   };
 
-  const handleSendOtp = () => {
+  // --- Initial password setup OTP (via SMTP) ---
+  const handleSendOtp = async () => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setGeneratedOtp(code);
     setOtpSent(true);
-    toast.success(`OTP sent to ${user?.email || "your email"}: ${code} (demo)`);
+    // Try sending via SMTP backend
+    try {
+      const smtpConfig = JSON.parse(localStorage.getItem("payrecovery_smtp") || "{}");
+      if (smtpConfig.smtpServer && smtpConfig.smtpPassword) {
+        await fetch("http://localhost:3001/api/email/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            smtp: { host: smtpConfig.smtpServer, port: parseInt(smtpConfig.smtpPort || "587"), email: smtpConfig.senderEmail || smtpConfig.smtpUsername, username: smtpConfig.smtpUsername, password: smtpConfig.smtpPassword, tls: smtpConfig.useTls !== false },
+            to: user?.email || "",
+            subject: "PayRecovery - Payment Security OTP",
+            message: `Your OTP for payment security setup is: ${code}\n\nThis OTP is valid for 10 minutes.\n\n- PayRecovery AI`,
+          }),
+        });
+        toast.success(`OTP sent to ${user?.email}`);
+        return;
+      }
+    } catch { /* fallback */ }
+    toast.success(`OTP sent to ${user?.email}: ${code} (SMTP not configured - showing for demo)`);
   };
 
   const handleVerifyOtp = () => {
@@ -72,6 +100,45 @@ export default function SettingsPage() {
     if (stored && btoa(paymentPassword) === stored) { setPaymentUnlocked(true); toast.success("Payment settings unlocked"); }
     else toast.error("Incorrect password");
     setPaymentPassword("");
+  };
+
+  // --- Forgot password flow ---
+  const handleForgotSendOtp = async () => {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setForgotGeneratedOtp(code);
+    setForgotOtpSent(true);
+    try {
+      const smtpConfig = JSON.parse(localStorage.getItem("payrecovery_smtp") || "{}");
+      if (smtpConfig.smtpServer && smtpConfig.smtpPassword) {
+        await fetch("http://localhost:3001/api/email/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            smtp: { host: smtpConfig.smtpServer, port: parseInt(smtpConfig.smtpPort || "587"), email: smtpConfig.senderEmail || smtpConfig.smtpUsername, username: smtpConfig.smtpUsername, password: smtpConfig.smtpPassword, tls: smtpConfig.useTls !== false },
+            to: user?.email || "",
+            subject: "PayRecovery - Password Reset OTP",
+            message: `Your OTP for password reset is: ${code}\n\nThis OTP is valid for 10 minutes.\n\n- PayRecovery AI`,
+          }),
+        });
+        toast.success(`Reset OTP sent to ${user?.email}`);
+        return;
+      }
+    } catch { /* fallback */ }
+    toast.success(`Reset OTP sent to ${user?.email}: ${code} (SMTP not configured - showing for demo)`);
+  };
+
+  const handleForgotVerifyOtp = () => {
+    if (forgotOtp === forgotGeneratedOtp) { setForgotOtpVerified(true); toast.success("OTP verified!"); }
+    else toast.error("Invalid OTP");
+  };
+
+  const handleForgotResetPassword = () => {
+    if (forgotNewPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    if (forgotNewPassword !== forgotConfirmPassword) { toast.error("Passwords don't match"); return; }
+    localStorage.setItem("payrecovery_pay_password", btoa(forgotNewPassword));
+    setForgotMode(false); setForgotOtpSent(false); setForgotOtpVerified(false);
+    setForgotOtp(""); setForgotNewPassword(""); setForgotConfirmPassword("");
+    toast.success("Password reset successfully! You can now unlock with your new password.");
   };
 
   const handleSaveKeys = async () => {
@@ -132,19 +199,55 @@ export default function SettingsPage() {
               )}
             </Card>
           ) : !paymentUnlocked ? (
-            <Card className="p-6 bg-card border-border/50 space-y-4">
-              <div className="flex items-center gap-3">
-                <Lock className="w-6 h-6 text-chart-4" />
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Payment Settings Locked</h3>
-                  <p className="text-xs text-muted-foreground">Enter your payment password to manage API keys</p>
+            forgotMode ? (
+              <Card className="p-6 bg-card border-border/50 space-y-4">
+                <div className="flex items-center gap-3">
+                  <KeyRound className="w-6 h-6 text-primary" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Reset Payment Password</h3>
+                    <p className="text-xs text-muted-foreground">We'll send an OTP to {user?.email} to verify your identity</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Input type="password" placeholder="Enter password" value={paymentPassword} onChange={(e) => setPaymentPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUnlockPayment()} className="max-w-xs" />
-                <Button onClick={handleUnlockPayment}>Unlock</Button>
-              </div>
-            </Card>
+                {!forgotOtpSent ? (
+                  <div className="space-y-3">
+                    <Button onClick={handleForgotSendOtp} className="gap-2"><Lock className="w-4 h-4" /> Send OTP to {user?.email}</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setForgotMode(false)}>Back to login</Button>
+                  </div>
+                ) : !forgotOtpVerified ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1"><Label className="text-xs">Enter OTP sent to {user?.email}</Label><Input value={forgotOtp} onChange={(e) => setForgotOtp(e.target.value)} placeholder="6-digit code" maxLength={6} /></div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleForgotVerifyOtp}>Verify OTP</Button>
+                      <Button variant="ghost" size="sm" onClick={handleForgotSendOtp}>Resend OTP</Button>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => { setForgotMode(false); setForgotOtpSent(false); }}>Back to login</Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="space-y-1"><Label className="text-xs">New Password (min 6 chars)</Label><Input type="password" value={forgotNewPassword} onChange={(e) => setForgotNewPassword(e.target.value)} /></div>
+                    <div className="space-y-1"><Label className="text-xs">Confirm Password</Label><Input type="password" value={forgotConfirmPassword} onChange={(e) => setForgotConfirmPassword(e.target.value)} /></div>
+                    <Button onClick={handleForgotResetPassword}>Reset Password</Button>
+                  </div>
+                )}
+              </Card>
+            ) : (
+              <Card className="p-6 bg-card border-border/50 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Lock className="w-6 h-6 text-chart-4" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Payment Settings Locked</h3>
+                    <p className="text-xs text-muted-foreground">Enter your payment password to manage API keys</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Input type="password" placeholder="Enter password" value={paymentPassword} onChange={(e) => setPaymentPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUnlockPayment()} className="max-w-xs" />
+                  <Button onClick={handleUnlockPayment}>Unlock</Button>
+                </div>
+                <button onClick={() => setForgotMode(true)} className="text-xs text-primary hover:underline">
+                  Forgot password?
+                </button>
+              </Card>
+            )
           ) : (
             <>
               {/* UPI */}

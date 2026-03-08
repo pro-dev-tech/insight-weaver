@@ -7,6 +7,7 @@ const datasetRoutes = require("./routes/dataset");
 const aiRoutes = require("./routes/ai");
 const settingsRoutes = require("./routes/settings");
 const emailRoutes = require("./routes/email");
+const gsheetRoutes = require("./routes/gsheet");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +27,7 @@ app.use("/api", datasetRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/email", emailRoutes);
+app.use("/api/gsheet", gsheetRoutes);
 
 // Health check
 app.get("/health", (req, res) => res.json({
