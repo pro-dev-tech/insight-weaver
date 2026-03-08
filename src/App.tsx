@@ -14,6 +14,7 @@ import Customers from "./pages/Customers";
 import UploadPage from "./pages/Upload";
 import Analytics from "./pages/Analytics";
 import SettingsPage from "./pages/Settings";
+import Notifications from "./pages/Notifications";
 import PaymentPage from "./pages/PaymentPage";
 import NotFound from "./pages/NotFound";
 
