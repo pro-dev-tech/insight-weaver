@@ -64,25 +64,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const profile = await fetchOrCreateProfile(session.user.id);
-        setUser(profile);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
+    let subscription: { unsubscribe: () => void } | null = null;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await fetchOrCreateProfile(session.user.id);
-        setUser(profile);
-      }
+    try {
+      const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user) {
+          try {
+            const profile = await fetchOrCreateProfile(session.user.id);
+            setUser(profile);
+          } catch (err) {
+            console.error("Profile fetch error:", err);
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      });
+      subscription = data.subscription;
+    } catch (err) {
+      console.error("Auth listener error:", err);
       setLoading(false);
-    });
+    }
 
-    return () => subscription.unsubscribe();
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        if (session?.user) {
+          try {
+            const profile = await fetchOrCreateProfile(session.user.id);
+            setUser(profile);
+          } catch (err) {
+            console.error("Profile fetch error:", err);
+          }
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("getSession error:", err);
+        setLoading(false);
+      });
+
+    return () => subscription?.unsubscribe();
   }, [fetchOrCreateProfile]);
 
   const login = useCallback(async (email: string, password: string) => {
