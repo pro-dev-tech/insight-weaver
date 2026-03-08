@@ -39,24 +39,25 @@ export interface Customer {
   lastPaymentDate?: string;
 }
 
+export type InvoiceStatus = "pending" | "paid" | "overdue" | "cancelled" | "unpaid" | "partial";
+
 export interface Invoice {
   id: string;
-  userId: string;
-  customerId: string;
+  userId?: string;
+  customerId?: string;
   invoiceNumber: string;
   amount: number;
-  currency: string;
+  currency?: string;
   dueDate: string;
-  status: "pending" | "paid" | "overdue" | "cancelled";
+  status: InvoiceStatus;
   paymentLink?: string;
   upiId?: string;
   createdAt: string;
-  updatedAt: string;
-  // Joined fields
+  updatedAt?: string;
+  // Joined / legacy fields
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
-  // Legacy compat
   invoiceDate?: string;
   paidAmount?: number;
   source?: string;
@@ -189,7 +190,6 @@ export function mapUser(row: any): User {
     businessEmail: row.business_email || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    // Legacy compat
     name: row.owner_name || row.business_name || "",
     email: row.business_email || "",
     companyName: row.business_name || "",
@@ -227,7 +227,6 @@ export function mapInvoice(row: any): Invoice {
     upiId: row.upi_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    // Legacy compat
     invoiceDate: row.created_at,
     paidAmount: row.status === "paid" ? parseFloat(row.amount) || 0 : 0,
     source: "upload",
