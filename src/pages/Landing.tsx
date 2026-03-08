@@ -153,6 +153,7 @@ export default function Landing() {
             <a href="#testimonials" className="hover:text-foreground transition-colors">Testimonials</a>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
