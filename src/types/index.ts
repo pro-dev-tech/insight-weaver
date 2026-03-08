@@ -1,17 +1,10 @@
 // ===== Core Types aligned with Supabase schema =====
 
 export interface User {
-  id: string;                // users.id (uuid)
-  authUserId: string;        // users.auth_user_id
-  businessName: string;      // users.business_name
-  ownerName: string;         // users.owner_name
-  phone: string;             // users.phone
-  businessEmail: string;     // users.business_email
-  createdAt: string;
-  updatedAt: string;
-  // Legacy compat
-  name: string;
+  id: string;              // auth.users.id (uuid) — used as user_id FK everywhere
   email: string;
+  name: string;
+  phone: string;
   companyName: string;
   companyLocation?: string;
   cinNumber?: string;
