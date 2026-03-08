@@ -68,23 +68,16 @@ export default function UploadPage() {
     if (!manualForm.customerName || !manualForm.amount) {
       toast.error("Name and amount are required"); return;
     }
-    const inv: Invoice = {
-      id: `INV-M-${Date.now()}`,
+    addManualInvoice({
       invoiceNumber: manualForm.invoiceNumber || `INV-M-${Date.now()}`,
       customerName: manualForm.customerName,
       customerPhone: manualForm.phone,
       customerEmail: manualForm.email,
-      invoiceDate: manualForm.invoiceDate || new Date().toISOString().split("T")[0],
       dueDate: manualForm.dueDate || manualForm.invoiceDate || new Date().toISOString().split("T")[0],
       amount: parseFloat(manualForm.amount) || 0,
-      paidAmount: 0,
-      status: manualForm.status,
-      source: "manual",
-      remindersSent: 0,
-      createdAt: new Date().toISOString(),
-    };
-    addManualInvoice(inv);
-    setManualForm({ customerName: "", amount: "", invoiceNumber: "", invoiceDate: "", dueDate: "", phone: "", email: "", status: "unpaid" });
+      status: manualForm.status === "unpaid" ? "pending" : manualForm.status === "partial" ? "pending" : manualForm.status,
+    });
+    setManualForm({ customerName: "", amount: "", invoiceNumber: "", invoiceDate: "", dueDate: "", phone: "", email: "", status: "pending" });
     setManualDialogOpen(false);
     toast.success("Invoice added manually!");
   };
