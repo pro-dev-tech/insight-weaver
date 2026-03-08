@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import {
   MessageCircle, Mail, Phone, Send, Save, ExternalLink,
-  FileText, Users, User, CheckCircle, Clock, AlertTriangle,
+  FileText, AlertTriangle,
 } from "lucide-react";
 
 // WhatsApp template
