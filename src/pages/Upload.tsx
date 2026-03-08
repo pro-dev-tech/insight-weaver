@@ -29,7 +29,7 @@ export default function UploadPage() {
 
   const {
     setInvoicesFromUpload, hasData, fileName, deleteDataset,
-    invoices, datasets, activeDatasetId, switchDataset, deleteDatasetById,
+    invoices,
     addManualInvoice,
     connectGoogleSheet, disconnectGoogleSheet, googleSheetConnected, googleSheetId, syncGoogleSheet,
   } = useInvoiceData();
