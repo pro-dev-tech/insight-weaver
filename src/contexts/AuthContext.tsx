@@ -19,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  resendConfirmation: (email: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -31,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch or create the users row for the current auth user
   const fetchOrCreateProfile = useCallback(async (authUserId: string) => {
     // Check if profile exists
-    const { data, error } = await supabase
+    const { data, error: _error } = await supabase
       .from("users")
       .select("*")
       .eq("auth_user_id", authUserId)
@@ -109,13 +110,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Profile will be created on first login after email verification
   }, []);
 
+  const resendConfirmation = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/login` },
+    });
+    if (error) throw new Error(error.message);
+  }, []);
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, register, resendConfirmation, logout }}>
       {children}
     </AuthContext.Provider>
   );
