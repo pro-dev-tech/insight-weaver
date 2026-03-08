@@ -228,9 +228,12 @@ export function mapInvoice(row: any): Invoice {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     invoiceDate: row.created_at,
-    paidAmount: row.status === "paid" ? parseFloat(row.amount) || 0 : 0,
+    paidAmount: row.status === "paid" ? (parseFloat(row.amount) || 0) : (parseFloat(row.paid_amount) || 0),
     source: "upload",
-    remindersSent: 0,
+    remindersSent: row.reminders_sent || 0,
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
   };
 }
 
