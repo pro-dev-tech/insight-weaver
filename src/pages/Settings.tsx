@@ -174,6 +174,7 @@ export default function SettingsPage() {
         <TabsList className="bg-secondary/50 border border-border/50">
           <TabsTrigger value="payment" className="text-xs gap-1"><CreditCard className="w-3 h-3" /> Payment</TabsTrigger>
           <TabsTrigger value="company" className="text-xs gap-1"><Building2 className="w-3 h-3" /> Company</TabsTrigger>
+          <TabsTrigger value="account" className="text-xs gap-1"><Trash2 className="w-3 h-3" /> Account</TabsTrigger>
         </TabsList>
 
         {/* Payment */}
