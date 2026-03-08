@@ -1,14 +1,12 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useState } from "react";
 
 export function AppLayout() {
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
-
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return (
     <div className="flex min-h-screen bg-background">

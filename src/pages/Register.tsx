@@ -37,6 +37,19 @@ export default function Register() {
     }
   };
 
+  const handleResendEmail = async () => {
+    if (!form.email) return;
+    setResending(true);
+    try {
+      await resendConfirmation(form.email);
+      toast.success("Confirmation email resent");
+    } catch (err: any) {
+      toast.error(err?.message || "Unable to resend confirmation email");
+    } finally {
+      setResending(false);
+    }
+  };
+
   if (registered) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-8">
@@ -46,10 +59,13 @@ export default function Register() {
           </div>
           <h2 className="text-2xl font-bold text-foreground">Verify Your Email</h2>
           <p className="text-sm text-muted-foreground">
-            A confirmation email has been sent to <span className="font-semibold text-foreground">{form.email}</span>. 
+            A confirmation email has been sent to <span className="font-semibold text-foreground">{form.email}</span>.
             Please click the link in the email to verify your account.
           </p>
           <div className="space-y-3">
+            <Button variant="outline" className="w-full" onClick={handleResendEmail} disabled={resending}>
+              {resending ? "Resending..." : "Resend confirmation email"}
+            </Button>
             <Button variant="outline" className="w-full" onClick={() => navigate("/login")}>
               <ArrowRight className="w-4 h-4 mr-2" /> Go to Login
             </Button>
