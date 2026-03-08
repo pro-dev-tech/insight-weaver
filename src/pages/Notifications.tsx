@@ -72,7 +72,7 @@ export default function Notifications() {
   const [waTemplate, setWaTemplate] = useState(() => localStorage.getItem("payrecovery_wa_template") || DEFAULT_WA_TEMPLATE);
   const [waApiDialog, setWaApiDialog] = useState(false);
   const [waBusinessName, setWaBusinessName] = useState("");
-  const [waBusinessDoc, setWaBusinessDoc] = useState<File | null>(null);
+  const [_waBusinessDoc, setWaBusinessDoc] = useState<File | null>(null);
 
   // SMS config
   const [smsSenderNumber, setSmsSenderNumber] = useState(() => localStorage.getItem("payrecovery_sms_sender") || "");
