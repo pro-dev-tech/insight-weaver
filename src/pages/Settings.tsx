@@ -6,8 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Save, CreditCard, Building2, Lock, Shield, QrCode, KeyRound } from "lucide-react";
+import { Save, CreditCard, Building2, Lock, Shield, QrCode, KeyRound, Trash2, AlertTriangle } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function SettingsPage() {
   const { user } = useAuth();
