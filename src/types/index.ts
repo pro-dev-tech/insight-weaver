@@ -1,17 +1,10 @@
 // ===== Core Types aligned with Supabase schema =====
 
 export interface User {
-  id: string;                // users.id (uuid)
-  authUserId: string;        // users.auth_user_id
-  businessName: string;      // users.business_name
-  ownerName: string;         // users.owner_name
-  phone: string;             // users.phone
-  businessEmail: string;     // users.business_email
-  createdAt: string;
-  updatedAt: string;
-  // Legacy compat
-  name: string;
+  id: string;              // auth.users.id (uuid) — used as user_id FK everywhere
   email: string;
+  name: string;
+  phone: string;
   companyName: string;
   companyLocation?: string;
   cinNumber?: string;
@@ -179,25 +172,7 @@ export interface NotificationResult {
   clickToChatLink?: string;
 }
 
-// Helper to convert snake_case DB rows to camelCase
-export function mapUser(row: any): User {
-  return {
-    id: row.id,
-    authUserId: row.auth_user_id,
-    businessName: row.business_name || "",
-    ownerName: row.owner_name || "",
-    phone: row.phone || "",
-    businessEmail: row.business_email || "",
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    name: row.owner_name || row.business_name || "",
-    email: row.business_email || "",
-    companyName: row.business_name || "",
-    companyLocation: "",
-    cinNumber: "",
-    role: "admin",
-  };
-}
+// mapUser removed — User is now built directly from auth.users session
 
 export function mapCustomer(row: any): Customer {
   return {
