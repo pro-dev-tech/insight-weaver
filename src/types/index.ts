@@ -172,25 +172,7 @@ export interface NotificationResult {
   clickToChatLink?: string;
 }
 
-// Helper to convert snake_case DB rows to camelCase
-export function mapUser(row: any): User {
-  return {
-    id: row.id,
-    authUserId: row.auth_user_id,
-    businessName: row.business_name || "",
-    ownerName: row.owner_name || "",
-    phone: row.phone || "",
-    businessEmail: row.business_email || "",
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    name: row.owner_name || row.business_name || "",
-    email: row.business_email || "",
-    companyName: row.business_name || "",
-    companyLocation: "",
-    cinNumber: "",
-    role: "admin",
-  };
-}
+// mapUser removed — User is now built directly from auth.users session
 
 export function mapCustomer(row: any): Customer {
   return {
