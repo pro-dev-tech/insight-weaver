@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export default function Register() {
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", companyName: "", companyLocation: "", cinNumber: "",
+    name: "", email: "", password: "", phone: "", companyName: "", companyLocation: "", cinNumber: "",
   });
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
