@@ -40,7 +40,7 @@ export default function UploadPage() {
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const [manualForm, setManualForm] = useState({
     customerName: "", amount: "", invoiceNumber: "", invoiceDate: "",
-    dueDate: "", phone: "", email: "", status: "unpaid" as Invoice["status"],
+    dueDate: "", phone: "", email: "", status: "pending" as Invoice["status"],
   });
 
   // Google Sheets

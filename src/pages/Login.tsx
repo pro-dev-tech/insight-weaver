@@ -77,7 +77,7 @@ export default function Login() {
             <Link to="/register" className="text-primary hover:underline font-medium">Create one</Link>
           </p>
           <p className="text-[10px] text-center text-muted-foreground/60">
-            Demo: Use any email/password to sign in
+            Powered by Supabase Auth
           </p>
         </div>
       </div>
