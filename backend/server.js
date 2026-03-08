@@ -6,6 +6,7 @@ const fs = require("fs");
 const datasetRoutes = require("./routes/dataset");
 const aiRoutes = require("./routes/ai");
 const settingsRoutes = require("./routes/settings");
+const emailRoutes = require("./routes/email");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
