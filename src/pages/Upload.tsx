@@ -137,40 +137,7 @@ export default function UploadPage() {
         </div>
       </div>
 
-      {/* Dataset Selector */}
-      {datasets.length > 0 && (
-        <Card className="p-4 bg-card border-border/50 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold text-foreground">Choose Dataset</h3>
-            </div>
-            <Badge variant="outline" className="text-[10px]">{datasets.length} dataset{datasets.length > 1 ? "s" : ""}</Badge>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {datasets.map((ds) => (
-              <div key={ds.id} className="flex items-center gap-1">
-                <Button
-                  size="sm"
-                  variant={activeDatasetId === ds.id ? "default" : "outline"}
-                  className="text-xs gap-2"
-                  onClick={() => switchDataset(ds.id)}
-                >
-                  <CheckCircle className={`w-3 h-3 ${activeDatasetId === ds.id ? "opacity-100" : "opacity-0"}`} />
-                  {ds.name} ({ds.invoices.length})
-                </Button>
-                <Button
-                  size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                  onClick={() => { deleteDatasetById(ds.id); toast.success(`Deleted: ${ds.name}`); }}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
+      {/* Data info */}
       {hasData && (
         <Card className="p-4 bg-accent/5 border-accent/20 flex items-center justify-between">
           <div className="flex items-center gap-3">
