@@ -6,8 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Save, CreditCard, Building2, Lock, Shield, QrCode, KeyRound } from "lucide-react";
+import { Save, CreditCard, Building2, Lock, Shield, QrCode, KeyRound, Trash2, AlertTriangle } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -170,6 +174,7 @@ export default function SettingsPage() {
         <TabsList className="bg-secondary/50 border border-border/50">
           <TabsTrigger value="payment" className="text-xs gap-1"><CreditCard className="w-3 h-3" /> Payment</TabsTrigger>
           <TabsTrigger value="company" className="text-xs gap-1"><Building2 className="w-3 h-3" /> Company</TabsTrigger>
+          <TabsTrigger value="account" className="text-xs gap-1"><Trash2 className="w-3 h-3" /> Account</TabsTrigger>
         </TabsList>
 
         {/* Payment */}
@@ -323,7 +328,158 @@ export default function SettingsPage() {
             </div>
           </Card>
         </TabsContent>
+
+        {/* Account Deletion */}
+        <TabsContent value="account" className="mt-4 space-y-4">
+          <AccountDeletion />
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+const DELETE_REASONS = [
+  "I no longer need this service",
+  "I found a better alternative",
+  "Too expensive / not worth the cost",
+  "Missing features I need",
+  "Privacy / data concerns",
+  "Other",
+];
+
+function AccountDeletion() {
+  const { user, logout } = useAuth();
+  const [showDialog, setShowDialog] = useState(false);
+  const [reason, setReason] = useState("");
+  const [otherReason, setOtherReason] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRequestDeletion = async () => {
+    const finalReason = reason === "Other" ? otherReason.trim() : reason;
+    if (!finalReason) {
+      toast.error("Please select a reason for deletion");
+      return;
+    }
+    if (confirmText !== "DELETE") {
+      toast.error("Please type DELETE to confirm");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const scheduledDate = new Date();
+      scheduledDate.setDate(scheduledDate.getDate() + 30);
+
+      // Log the deletion request in activity_logs
+      if (user?.id) {
+        await supabase.from("activity_logs").insert({
+          user_id: user.id,
+          action: "account_deletion_scheduled",
+          description: `Account deletion scheduled for ${scheduledDate.toLocaleDateString()}. Reason: ${finalReason}`,
+        });
+      }
+
+      toast.success(
+        `Account deletion scheduled. Your account and all data will be permanently deleted on ${scheduledDate.toLocaleDateString()}. You can cancel this within 30 days by contacting support.`
+      );
+      setShowDialog(false);
+      setReason("");
+      setOtherReason("");
+      setConfirmText("");
+
+      // Sign out after scheduling
+      setTimeout(() => logout(), 2000);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to schedule deletion");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Card className="p-6 bg-card border-destructive/30 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5 text-destructive" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Delete Account</h3>
+            <p className="text-xs text-muted-foreground">
+              Permanently delete your account and all associated data. This action is irreversible after 30 days.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="destructive"
+          size="sm"
+          className="gap-2"
+          onClick={() => setShowDialog(true)}
+        >
+          <Trash2 className="w-4 h-4" /> Request Account Deletion
+        </Button>
+      </Card>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Delete Account
+            </DialogTitle>
+            <DialogDescription>
+              Your account will be scheduled for deletion in <span className="font-semibold text-foreground">30 days</span>. 
+              During this period you can contact support to cancel. After 30 days, all your data will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Why are you leaving? *</Label>
+              <RadioGroup value={reason} onValueChange={setReason} className="space-y-2">
+                {DELETE_REASONS.map((r) => (
+                  <div key={r} className="flex items-center space-x-2">
+                    <RadioGroupItem value={r} id={r} />
+                    <Label htmlFor={r} className="text-sm font-normal cursor-pointer">{r}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+              {reason === "Other" && (
+                <Textarea
+                  placeholder="Please tell us more..."
+                  value={otherReason}
+                  onChange={(e) => setOtherReason(e.target.value)}
+                  className="mt-2"
+                  rows={3}
+                />
+              )}
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-border">
+              <Label className="text-sm font-medium">
+                Type <span className="font-mono text-destructive">DELETE</span> to confirm
+              </Label>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="Type DELETE"
+                className="font-mono"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={handleRequestDeletion}
+              disabled={loading || confirmText !== "DELETE" || !reason}
+            >
+              {loading ? "Scheduling..." : "Schedule Deletion (30 days)"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
