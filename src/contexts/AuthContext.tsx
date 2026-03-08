@@ -90,24 +90,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (data: RegisterData) => {
-    // 1. Sign up with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: { emailRedirectTo: window.location.origin },
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: {
+          name: data.name,
+          phone: data.phone,
+          companyName: data.companyName,
+          companyLocation: data.companyLocation,
+          cinNumber: data.cinNumber,
+        },
+      },
     });
     if (authError) throw new Error(authError.message);
     if (!authData.user) throw new Error("Registration failed");
-
-    // 2. Create users row
-    const { error: profileError } = await supabase.from("users").insert({
-      auth_user_id: authData.user.id,
-      business_name: data.companyName,
-      owner_name: data.name,
-      phone: data.phone,
-      business_email: data.email,
-    });
-    if (profileError) throw new Error(profileError.message);
+    // Profile will be created on first login after email verification
   }, []);
 
   const logout = useCallback(async () => {
