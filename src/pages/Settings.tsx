@@ -38,7 +38,7 @@ export default function SettingsPage() {
   const [paymentPassword, setPaymentPassword] = useState("");
   const [paymentPasswordSet, setPaymentPasswordSet] = useState(() => !!localStorage.getItem("payrecovery_pay_password"));
   const [paymentUnlocked, setPaymentUnlocked] = useState(false);
-  const [showPasswordSetup, setShowPasswordSetup] = useState(false);
+  const [_showPasswordSetup, setShowPasswordSetup] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");

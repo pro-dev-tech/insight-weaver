@@ -19,20 +19,6 @@ const COLORS = [
   "hsl(var(--chart-6))",
 ];
 
-function getChartTheme() {
-  const style = getComputedStyle(document.documentElement);
-  const get = (v: string) => {
-    const val = style.getPropertyValue(v).trim();
-    return val ? `hsl(${val})` : undefined;
-  };
-  return {
-    grid: get("--chart-grid") || "hsl(220, 14%, 88%)",
-    text: get("--chart-text") || "hsl(220, 15%, 35%)",
-    tooltipBg: get("--chart-tooltip-bg") || "hsl(0, 0%, 100%)",
-    tooltipBorder: get("--chart-tooltip-border") || "hsl(220, 14%, 88%)",
-    tooltipText: get("--chart-tooltip-text") || "hsl(220, 20%, 10%)",
-  };
-}
 
 interface ChartCardProps {
   config: ChartConfig;
