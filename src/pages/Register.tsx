@@ -36,6 +36,29 @@ export default function Register() {
     }
   };
 
+  if (registered) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-8">
+        <div className="w-full max-w-md text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Mail className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">Verify Your Email</h2>
+          <p className="text-sm text-muted-foreground">
+            A confirmation email has been sent to <span className="font-semibold text-foreground">{form.email}</span>. 
+            Please click the link in the email to verify your account.
+          </p>
+          <div className="space-y-3">
+            <Button variant="outline" className="w-full" onClick={() => navigate("/login")}>
+              <ArrowRight className="w-4 h-4 mr-2" /> Go to Login
+            </Button>
+            <p className="text-xs text-muted-foreground">Didn't receive the email? Check your spam folder.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-8">
       <div className="w-full max-w-lg space-y-8">
