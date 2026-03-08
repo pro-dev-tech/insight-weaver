@@ -19,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  resendConfirmation: (email: string) => Promise<void>;
   logout: () => void;
 }
 
