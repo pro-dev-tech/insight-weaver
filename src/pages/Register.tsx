@@ -19,7 +19,7 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.phone || !form.companyName || !form.companyLocation) {
+    if (!form.name || !form.email || !form.password || !form.phone || !form.companyName || !form.companyLocation) {
       toast.error("Please fill all required fields");
       return;
     }
