@@ -1,26 +1,45 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import type { Invoice, Customer, DashboardStats } from "@/types";
 
+interface Dataset {
+  id: string;
+  name: string;
+  invoices: Invoice[];
+  customers: Customer[];
+  createdAt: string;
+}
+
 interface InvoiceDataContextType {
   invoices: Invoice[];
   customers: Customer[];
   fileName: string | null;
   hasData: boolean;
+  datasets: Dataset[];
+  activeDatasetId: string | null;
   setInvoicesFromUpload: (rows: any[], fileName: string) => void;
   addManualInvoice: (inv: Invoice) => void;
   updateInvoice: (id: string, updates: Partial<Invoice>) => void;
   deleteDataset: () => void;
+  deleteDatasetById: (id: string) => void;
+  switchDataset: (id: string) => void;
   getStats: () => DashboardStats;
+  // Google Sheets sync
+  connectGoogleSheet: (sheetId: string, accessToken: string) => void;
+  disconnectGoogleSheet: () => void;
+  googleSheetConnected: boolean;
+  googleSheetId: string | null;
+  syncGoogleSheet: () => Promise<void>;
 }
 
 const InvoiceDataContext = createContext<InvoiceDataContextType | null>(null);
 
-const STORAGE_KEY = "payrecovery_invoices";
-const STORAGE_CUSTOMERS_KEY = "payrecovery_customers";
-const STORAGE_FILENAME_KEY = "payrecovery_filename";
+const STORAGE_DATASETS_KEY = "payrecovery_datasets";
+const STORAGE_ACTIVE_KEY = "payrecovery_active_dataset";
+const STORAGE_GSHEET_KEY = "payrecovery_gsheet";
+
+// ---- Parsing helpers ----
 
 function parseInvoiceRow(row: any, index: number): Invoice | null {
-  // Flexible field mapping — try common column name variations
   const get = (keys: string[]): string => {
     for (const k of keys) {
       const found = Object.keys(row).find(
@@ -94,7 +113,6 @@ function buildCustomersFromInvoices(invoices: Invoice[]): Customer[] {
         }, 0) / overdueInvs.length)
       : 0;
 
-    // Simple risk scoring
     const outstandingRatio = totalOutstanding / Math.max(1, totalOutstanding + totalPaid);
     const delayFactor = Math.min(avgDelay / 90, 1);
     const overdueRatio = overdueInvs.length / Math.max(1, invs.length);
@@ -108,12 +126,9 @@ function buildCustomersFromInvoices(invoices: Invoice[]): Customer[] {
 
     return {
       id: `CUST-${idx + 1}`,
-      name,
-      email,
-      phone,
+      name, email, phone,
       totalInvoices: invs.length,
-      totalOutstanding,
-      totalPaid,
+      totalOutstanding, totalPaid,
       avgPaymentDelay: avgDelay,
       riskScore: parseFloat(riskScore.toFixed(2)),
       riskLevel,
@@ -147,75 +162,252 @@ function getDashboardStats(invoices: Invoice[]): DashboardStats {
   return { totalReceivables, overdueInvoices, paidInvoices, totalInvoices, recoveryRate, aging };
 }
 
+// ---- Load datasets from localStorage ----
+function loadDatasets(): Dataset[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_DATASETS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch { return []; }
+}
+
+function saveDatasets(datasets: Dataset[]) {
+  localStorage.setItem(STORAGE_DATASETS_KEY, JSON.stringify(datasets));
+}
+
+// ---- Migrate legacy data ----
+function migrateLegacyData(): Dataset[] {
+  const legacyInvoices = localStorage.getItem("payrecovery_invoices");
+  const legacyFilename = localStorage.getItem("payrecovery_filename");
+  if (legacyInvoices) {
+    try {
+      const invs: Invoice[] = JSON.parse(legacyInvoices);
+      if (invs.length > 0) {
+        const ds: Dataset = {
+          id: `ds-legacy-${Date.now()}`,
+          name: legacyFilename || "Legacy Dataset",
+          invoices: invs,
+          customers: buildCustomersFromInvoices(invs),
+          createdAt: new Date().toISOString(),
+        };
+        localStorage.removeItem("payrecovery_invoices");
+        localStorage.removeItem("payrecovery_customers");
+        localStorage.removeItem("payrecovery_filename");
+        return [ds];
+      }
+    } catch {}
+  }
+  return [];
+}
+
 export function InvoiceDataProvider({ children }: { children: ReactNode }) {
-  const [invoices, setInvoices] = useState<Invoice[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
+  const [datasets, setDatasets] = useState<Dataset[]>(() => {
+    const existing = loadDatasets();
+    if (existing.length > 0) return existing;
+    return migrateLegacyData();
   });
 
-  const [customers, setCustomers] = useState<Customer[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_CUSTOMERS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
+  const [activeDatasetId, setActiveDatasetId] = useState<string | null>(() => {
+    const saved = localStorage.getItem(STORAGE_ACTIVE_KEY);
+    if (saved) return saved;
+    const ds = loadDatasets();
+    return ds.length > 0 ? ds[0].id : null;
   });
 
-  const [fileName, setFileName] = useState<string | null>(() => {
-    return localStorage.getItem(STORAGE_FILENAME_KEY);
+  // Google Sheets
+  const [googleSheetId, setGoogleSheetId] = useState<string | null>(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_GSHEET_KEY) || "null")?.sheetId || null; } catch { return null; }
   });
+  const [googleSheetConnected, setGoogleSheetConnected] = useState(() => !!googleSheetId);
 
-  const persist = (invs: Invoice[], custs: Customer[], fname: string | null) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(invs));
-    localStorage.setItem(STORAGE_CUSTOMERS_KEY, JSON.stringify(custs));
-    if (fname) localStorage.setItem(STORAGE_FILENAME_KEY, fname);
-    else localStorage.removeItem(STORAGE_FILENAME_KEY);
-  };
+  const activeDataset = datasets.find((d) => d.id === activeDatasetId) || null;
+  const invoices = activeDataset?.invoices || [];
+  const customers = activeDataset?.customers || [];
+  const fileName = activeDataset?.name || null;
+
+  const persistAll = useCallback((newDatasets: Dataset[], activeId: string | null) => {
+    saveDatasets(newDatasets);
+    if (activeId) localStorage.setItem(STORAGE_ACTIVE_KEY, activeId);
+    else localStorage.removeItem(STORAGE_ACTIVE_KEY);
+  }, []);
 
   const setInvoicesFromUpload = useCallback((rows: any[], fname: string) => {
     const parsed = rows.map((r, i) => parseInvoiceRow(r, i)).filter(Boolean) as Invoice[];
     const custs = buildCustomersFromInvoices(parsed);
-    setInvoices(parsed);
-    setCustomers(custs);
-    setFileName(fname);
-    persist(parsed, custs, fname);
-  }, []);
+    const newDs: Dataset = {
+      id: `ds-${Date.now()}`,
+      name: fname,
+      invoices: parsed,
+      customers: custs,
+      createdAt: new Date().toISOString(),
+    };
+    setDatasets((prev) => {
+      const next = [...prev, newDs];
+      persistAll(next, newDs.id);
+      return next;
+    });
+    setActiveDatasetId(newDs.id);
+  }, [persistAll]);
 
   const addManualInvoice = useCallback((inv: Invoice) => {
-    setInvoices((prev) => {
-      const next = [inv, ...prev];
-      const custs = buildCustomersFromInvoices(next);
-      setCustomers(custs);
-      persist(next, custs, fileName);
+    setDatasets((prev) => {
+      if (!activeDatasetId) {
+        // Create a new "Manual" dataset
+        const newDs: Dataset = {
+          id: `ds-manual-${Date.now()}`,
+          name: "Manual Entries",
+          invoices: [inv],
+          customers: buildCustomersFromInvoices([inv]),
+          createdAt: new Date().toISOString(),
+        };
+        const next = [...prev, newDs];
+        persistAll(next, newDs.id);
+        setActiveDatasetId(newDs.id);
+        return next;
+      }
+      const next = prev.map((d) => {
+        if (d.id !== activeDatasetId) return d;
+        const newInvs = [inv, ...d.invoices];
+        return { ...d, invoices: newInvs, customers: buildCustomersFromInvoices(newInvs) };
+      });
+      persistAll(next, activeDatasetId);
       return next;
     });
-  }, [fileName]);
+  }, [activeDatasetId, persistAll]);
 
   const updateInvoice = useCallback((id: string, updates: Partial<Invoice>) => {
-    setInvoices((prev) => {
-      const next = prev.map((i) => (i.id === id ? { ...i, ...updates } : i));
-      const custs = buildCustomersFromInvoices(next);
-      setCustomers(custs);
-      persist(next, custs, fileName);
+    setDatasets((prev) => {
+      const next = prev.map((d) => {
+        if (d.id !== activeDatasetId) return d;
+        const newInvs = d.invoices.map((i) => (i.id === id ? { ...i, ...updates } : i));
+        return { ...d, invoices: newInvs, customers: buildCustomersFromInvoices(newInvs) };
+      });
+      persistAll(next, activeDatasetId);
       return next;
     });
-  }, [fileName]);
+  }, [activeDatasetId, persistAll]);
 
   const deleteDataset = useCallback(() => {
-    setInvoices([]);
-    setCustomers([]);
-    setFileName(null);
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STORAGE_CUSTOMERS_KEY);
-    localStorage.removeItem(STORAGE_FILENAME_KEY);
+    setDatasets((prev) => {
+      const next = prev.filter((d) => d.id !== activeDatasetId);
+      const newActive = next.length > 0 ? next[0].id : null;
+      setActiveDatasetId(newActive);
+      persistAll(next, newActive);
+      return next;
+    });
+  }, [activeDatasetId, persistAll]);
+
+  const deleteDatasetById = useCallback((id: string) => {
+    setDatasets((prev) => {
+      const next = prev.filter((d) => d.id !== id);
+      if (activeDatasetId === id) {
+        const newActive = next.length > 0 ? next[0].id : null;
+        setActiveDatasetId(newActive);
+        persistAll(next, newActive);
+      } else {
+        persistAll(next, activeDatasetId);
+      }
+      return next;
+    });
+  }, [activeDatasetId, persistAll]);
+
+  const switchDataset = useCallback((id: string) => {
+    setActiveDatasetId(id);
+    localStorage.setItem(STORAGE_ACTIVE_KEY, id);
   }, []);
 
   const getStats = useCallback(() => getDashboardStats(invoices), [invoices]);
 
+  // Google Sheets
+  const connectGoogleSheet = useCallback((sheetId: string, accessToken: string) => {
+    localStorage.setItem(STORAGE_GSHEET_KEY, JSON.stringify({ sheetId, accessToken }));
+    setGoogleSheetId(sheetId);
+    setGoogleSheetConnected(true);
+  }, []);
+
+  const disconnectGoogleSheet = useCallback(() => {
+    localStorage.removeItem(STORAGE_GSHEET_KEY);
+    setGoogleSheetId(null);
+    setGoogleSheetConnected(false);
+  }, []);
+
+  const syncGoogleSheet = useCallback(async () => {
+    try {
+      const config = JSON.parse(localStorage.getItem(STORAGE_GSHEET_KEY) || "null");
+      if (!config?.sheetId || !config?.accessToken) throw new Error("Not connected");
+
+      const res = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${config.sheetId}/values/Sheet1?key=&access_token=${config.accessToken}`
+      );
+      if (!res.ok) {
+        // Try with API route on backend
+        const backendRes = await fetch(`http://localhost:3001/api/gsheet/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sheetId: config.sheetId, accessToken: config.accessToken }),
+        });
+        if (!backendRes.ok) throw new Error("Sync failed");
+        const data = await backendRes.json();
+        if (data.rows) {
+          const parsed = data.rows.map((r: any, i: number) => parseInvoiceRow(r, i)).filter(Boolean) as Invoice[];
+          const custs = buildCustomersFromInvoices(parsed);
+          setDatasets((prev) => {
+            const existingIdx = prev.findIndex((d) => d.name === `GSheet: ${config.sheetId}`);
+            const ds: Dataset = {
+              id: existingIdx >= 0 ? prev[existingIdx].id : `ds-gsheet-${Date.now()}`,
+              name: `GSheet: ${config.sheetId}`,
+              invoices: parsed,
+              customers: custs,
+              createdAt: new Date().toISOString(),
+            };
+            const next = existingIdx >= 0 ? prev.map((d, i) => i === existingIdx ? ds : d) : [...prev, ds];
+            persistAll(next, ds.id);
+            setActiveDatasetId(ds.id);
+            return next;
+          });
+        }
+        return;
+      }
+
+      const data = await res.json();
+      if (data.values && data.values.length > 1) {
+        const headers = data.values[0] as string[];
+        const rows = data.values.slice(1).map((row: string[]) => {
+          const obj: any = {};
+          headers.forEach((h, i) => { obj[h] = row[i] || ""; });
+          return obj;
+        });
+        const parsed = rows.map((r: any, i: number) => parseInvoiceRow(r, i)).filter(Boolean) as Invoice[];
+        const custs = buildCustomersFromInvoices(parsed);
+        setDatasets((prev) => {
+          const existingIdx = prev.findIndex((d) => d.name === `GSheet: ${config.sheetId}`);
+          const ds: Dataset = {
+            id: existingIdx >= 0 ? prev[existingIdx].id : `ds-gsheet-${Date.now()}`,
+            name: `GSheet: ${config.sheetId}`,
+            invoices: parsed,
+            customers: custs,
+            createdAt: new Date().toISOString(),
+          };
+          const next = existingIdx >= 0 ? prev.map((d, i) => i === existingIdx ? ds : d) : [...prev, ds];
+          persistAll(next, ds.id);
+          setActiveDatasetId(ds.id);
+          return next;
+        });
+      }
+    } catch (err: any) {
+      console.error("Google Sheet sync error:", err);
+      throw err;
+    }
+  }, [persistAll]);
+
   return (
     <InvoiceDataContext.Provider
-      value={{ invoices, customers, fileName, hasData: invoices.length > 0, setInvoicesFromUpload, addManualInvoice, updateInvoice, deleteDataset, getStats }}
+      value={{
+        invoices, customers, fileName, hasData: invoices.length > 0,
+        datasets, activeDatasetId,
+        setInvoicesFromUpload, addManualInvoice, updateInvoice,
+        deleteDataset, deleteDatasetById, switchDataset, getStats,
+        connectGoogleSheet, disconnectGoogleSheet, googleSheetConnected, googleSheetId, syncGoogleSheet,
+      }}
     >
       {children}
     </InvoiceDataContext.Provider>
