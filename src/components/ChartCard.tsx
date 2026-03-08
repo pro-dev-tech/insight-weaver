@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Download, Maximize2, X } from "lucide-react";
+import { Download, Maximize2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import {

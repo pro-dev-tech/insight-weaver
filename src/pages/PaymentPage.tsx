@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { QRCodeSVG } from "qrcode.react";
 import { CheckCircle, Clock, XCircle, Shield } from "lucide-react";
 

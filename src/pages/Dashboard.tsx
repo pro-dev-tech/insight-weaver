@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useInvoiceData } from "@/contexts/InvoiceDataContext";
 import { motion } from "framer-motion";
 import {
-  IndianRupee, FileText, AlertTriangle, CheckCircle, TrendingUp,
-  Users, Clock, ArrowUpRight, ArrowDownRight, Upload, Maximize2,
+  IndianRupee, AlertTriangle, CheckCircle, TrendingUp,
+  Users, Clock, Upload, Maximize2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
