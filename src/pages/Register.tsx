@@ -17,6 +17,8 @@ export default function Register() {
 
   const update = (key: string, val: string) => setForm((p) => ({ ...p, [key]: val }));
 
+  const [registered, setRegistered] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.password || !form.phone || !form.companyName || !form.companyLocation) {
@@ -26,10 +28,9 @@ export default function Register() {
     setLoading(true);
     try {
       await register(form);
-      toast.success("Account created successfully!");
-      navigate("/dashboard");
-    } catch {
-      toast.error("Registration failed");
+      setRegistered(true);
+    } catch (err: any) {
+      toast.error(err?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
