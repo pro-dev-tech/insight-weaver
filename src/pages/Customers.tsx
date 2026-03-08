@@ -12,6 +12,61 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, AlertTriangle, CheckCircle, AlertCircle, User, Upload, Brain, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+function formatAiExplanation(text: string) {
+  if (!text) return <p className="text-sm text-muted-foreground">No analysis available.</p>;
+
+  const sections: { icon: React.ReactNode; title: string; content: string }[] = [];
+  const lines = text.split("\n").filter((l) => l.trim());
+
+  let currentTitle = "";
+  let currentContent: string[] = [];
+
+  const flushSection = () => {
+    if (currentTitle || currentContent.length) {
+      sections.push({
+        icon: currentTitle.toLowerCase().includes("risk") ? <AlertTriangle className="w-4 h-4 text-chart-4" /> :
+              currentTitle.toLowerCase().includes("recommend") ? <CheckCircle className="w-4 h-4 text-accent" /> :
+              currentTitle.toLowerCase().includes("pattern") ? <TrendingUp className="w-4 h-4 text-chart-2" /> :
+              <Info className="w-4 h-4 text-primary" />,
+        title: currentTitle || "Insight",
+        content: currentContent.join("\n"),
+      });
+      currentTitle = "";
+      currentContent = [];
+    }
+  };
+
+  for (const line of lines) {
+    const cleaned = line.replace(/^[\d]+[\.\)]\s*/, "").replace(/^\*\*/, "").replace(/\*\*$/, "").replace(/\*\*/g, "").trim();
+    const isHeader = /^[\d]+[\.\)]/.test(line.trim()) || (line.startsWith("**") && line.endsWith("**")) || line.startsWith("📌") || line.startsWith("# ");
+
+    if (isHeader) {
+      flushSection();
+      currentTitle = cleaned;
+    } else {
+      currentContent.push(cleaned);
+    }
+  }
+  flushSection();
+
+  if (sections.length === 0) {
+    return <div className="text-sm text-foreground bg-secondary/20 rounded-lg p-3 leading-relaxed whitespace-pre-wrap">{text}</div>;
+  }
+
+  return (
+    <>
+      {sections.map((s, i) => (
+        <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
+          <div className="p-1.5 rounded-md bg-secondary flex-shrink-0 mt-0.5">{s.icon}</div>
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-semibold text-foreground">{s.title}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{s.content}</p>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
 
 const RISK_CONFIG = {
   low: { color: "bg-accent/10 text-accent border-accent/20", icon: CheckCircle, label: "Low Risk" },
