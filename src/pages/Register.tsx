@@ -57,6 +57,10 @@ export default function Register() {
               <Input type="email" placeholder="you@company.in" value={form.email} onChange={(e) => update("email", e.target.value)} />
             </div>
             <div className="space-y-2">
+              <Label>Password *</Label>
+              <Input type="password" placeholder="••••••••" value={form.password} onChange={(e) => update("password", e.target.value)} />
+            </div>
+            <div className="space-y-2">
               <Label>Phone *</Label>
               <Input placeholder="+91 98765 43210" value={form.phone} onChange={(e) => update("phone", e.target.value)} />
             </div>
