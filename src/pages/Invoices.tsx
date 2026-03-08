@@ -64,14 +64,15 @@ export default function Invoices() {
     if (!newInv.customerName || !newInv.invoiceNumber || !newInv.amount || !newInv.dueDate) {
       toast.error("Fill all required fields"); return;
     }
-    const inv: Invoice = {
-      id: `INV-${Date.now()}`, invoiceNumber: newInv.invoiceNumber, customerName: newInv.customerName,
-      customerPhone: newInv.customerPhone, customerEmail: newInv.customerEmail,
-      invoiceDate: new Date().toISOString().split("T")[0], dueDate: newInv.dueDate,
-      amount: parseFloat(newInv.amount), paidAmount: 0, status: "unpaid", source: "manual",
-      remindersSent: 0, createdAt: new Date().toISOString(),
-    };
-    addManualInvoice(inv);
+    addManualInvoice({
+      invoiceNumber: newInv.invoiceNumber,
+      customerName: newInv.customerName,
+      customerPhone: newInv.customerPhone,
+      customerEmail: newInv.customerEmail,
+      dueDate: newInv.dueDate,
+      amount: parseFloat(newInv.amount),
+      status: "pending",
+    });
     setAddOpen(false);
     setNewInv({ customerName: "", customerEmail: "", customerPhone: "", invoiceNumber: "", amount: "", dueDate: "" });
     toast.success("Invoice added");
