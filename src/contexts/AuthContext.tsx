@@ -1,72 +1,105 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { supabase } from "@/lib/supabase";
 import type { User } from "@/types";
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
-}
+import { mapUser } from "@/types";
 
 interface RegisterData {
   name: string;
   email: string;
+  password: string;
   phone: string;
   companyName: string;
   companyLocation: string;
   cinNumber?: string;
 }
 
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
+  logout: () => void;
+}
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Demo user for development
-const DEMO_USER: User = {
-  id: "demo-1",
-  name: "Rajesh Kumar",
-  email: "rajesh@example.com",
-  phone: "+919876543210",
-  companyName: "Kumar Enterprises",
-  companyLocation: "Mumbai, Maharashtra",
-  cinNumber: "U12345MH2020PTC123456",
-  role: "admin",
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem("payrecovery_user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = useCallback(async (email: string, _password: string) => {
-    // Demo auth — accepts any credentials
-    const u = { ...DEMO_USER, email };
-    localStorage.setItem("payrecovery_user", JSON.stringify(u));
-    setUser(u);
+  // Fetch the users row for the current auth user
+  const fetchProfile = useCallback(async (authUserId: string) => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return null;
+    }
+    return data ? mapUser(data) : null;
+  }, []);
+
+  useEffect(() => {
+    // Listen for auth state changes — set up BEFORE getSession
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const profile = await fetchProfile(session.user.id);
+        setUser(profile);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    // Check existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await fetchProfile(session.user.id);
+        setUser(profile);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfile]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
   }, []);
 
   const register = useCallback(async (data: RegisterData) => {
-    const u: User = {
-      id: `user-${Date.now()}`,
-      name: data.name,
+    // 1. Sign up with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
+      password: data.password,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    if (authError) throw new Error(authError.message);
+    if (!authData.user) throw new Error("Registration failed");
+
+    // 2. Create users row
+    const { error: profileError } = await supabase.from("users").insert({
+      auth_user_id: authData.user.id,
+      business_name: data.companyName,
+      owner_name: data.name,
       phone: data.phone,
-      companyName: data.companyName,
-      companyLocation: data.companyLocation,
-      cinNumber: data.cinNumber,
-      role: "admin",
-    };
-    localStorage.setItem("payrecovery_user", JSON.stringify(u));
-    setUser(u);
+      business_email: data.email,
+    });
+    if (profileError) throw new Error(profileError.message);
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("payrecovery_user");
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

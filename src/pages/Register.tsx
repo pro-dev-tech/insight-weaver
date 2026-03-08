@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export default function Register() {
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", companyName: "", companyLocation: "", cinNumber: "",
+    name: "", email: "", password: "", phone: "", companyName: "", companyLocation: "", cinNumber: "",
   });
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -19,7 +19,7 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.phone || !form.companyName || !form.companyLocation) {
+    if (!form.name || !form.email || !form.password || !form.phone || !form.companyName || !form.companyLocation) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -55,6 +55,10 @@ export default function Register() {
             <div className="space-y-2">
               <Label>Email *</Label>
               <Input type="email" placeholder="you@company.in" value={form.email} onChange={(e) => update("email", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Password *</Label>
+              <Input type="password" placeholder="••••••••" value={form.password} onChange={(e) => update("password", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Phone *</Label>

@@ -1,79 +1,142 @@
-// ===== Core Types for AI-Powered Payment Recovery System =====
+// ===== Core Types aligned with Supabase schema =====
 
 export interface User {
-  id: string;
+  id: string;                // users.id (uuid)
+  authUserId: string;        // users.auth_user_id
+  businessName: string;      // users.business_name
+  ownerName: string;         // users.owner_name
+  phone: string;             // users.phone
+  businessEmail: string;     // users.business_email
+  createdAt: string;
+  updatedAt: string;
+  // Legacy compat
   name: string;
   email: string;
-  phone: string;
   companyName: string;
-  companyLocation: string;
+  companyLocation?: string;
   cinNumber?: string;
-  role: "admin" | "staff";
-}
-
-export interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  invoiceDate: string;
-  dueDate: string;
-  amount: number;
-  paidAmount: number;
-  status: "paid" | "unpaid" | "overdue" | "partial" | "cancelled";
-  source: "upload" | "google_drive" | "google_sheets" | "email" | "api" | "manual";
-  remindersSent: number;
-  lastReminderDate?: string;
-  paymentLink?: string;
-  createdAt: string;
+  role?: "admin" | "staff";
 }
 
 export interface Customer {
   id: string;
+  userId: string;
   name: string;
-  email: string;
   phone: string;
-  totalInvoices: number;
-  totalOutstanding: number;
-  totalPaid: number;
-  avgPaymentDelay: number;
-  riskScore: number;
-  riskLevel: "low" | "medium" | "high";
-  notificationPreference: "whatsapp" | "sms" | "email" | "multi" | null;
+  email: string;
+  companyName: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  // Computed (client-side)
+  totalInvoices?: number;
+  totalOutstanding?: number;
+  totalPaid?: number;
+  avgPaymentDelay?: number;
+  riskScore?: number;
+  riskLevel?: "low" | "medium" | "high";
+  notificationPreference?: "whatsapp" | "sms" | "email" | "multi" | null;
   lastPaymentDate?: string;
+}
+
+export type InvoiceStatus = "pending" | "paid" | "overdue" | "cancelled" | "unpaid" | "partial";
+
+export interface Invoice {
+  id: string;
+  userId?: string;
+  customerId?: string;
+  invoiceNumber: string;
+  amount: number;
+  currency?: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  paymentLink?: string;
+  upiId?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // Joined / legacy fields
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  invoiceDate?: string;
+  paidAmount?: number;
+  source?: string;
+  remindersSent?: number;
+  lastReminderDate?: string;
+}
+
+export interface ReminderLog {
+  id: string;
+  userId: string;
+  invoiceId: string;
+  customerId: string;
+  channel: "whatsapp" | "sms" | "email";
+  recipient: string;
+  message: string;
+  status: "sent" | "failed" | "pending";
+  providerResponse?: string;
+  sentAt: string;
+}
+
+export interface NotificationPreference {
+  id: string;
+  userId: string;
+  sendEmail: boolean;
+  sendSms: boolean;
+  sendWhatsapp: boolean;
+  reminderDaysBefore: number;
+  reminderDaysAfter: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SmtpSettings {
+  id: string;
+  userId: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpEmail: string;
+  smtpPasswordEncrypted: string;
+  securityPasswordHash: string;
+  vaultUnlockedUntil?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiKeyVault {
+  id: string;
+  userId: string;
+  provider: string;
+  keyName: string;
+  keyValueEncrypted: string;
   createdAt: string;
 }
 
-export interface Reminder {
+export interface NotificationTemplate {
   id: string;
-  invoiceId: string;
-  customerId: string;
-  customerName: string;
-  type: "friendly" | "professional" | "firm" | "escalation";
-  channel: "whatsapp" | "sms" | "email";
-  status: "sent" | "failed" | "pending" | "skipped";
-  message: string;
-  scheduledAt: string;
-  sentAt?: string;
+  userId: string;
+  channel: string;
+  templateName: string;
+  templateBody: string;
+  createdAt: string;
 }
 
-export interface MSMESettings {
-  defaultNotificationMode: "whatsapp" | "sms" | "email" | "multi";
-  fallbackEnabled: boolean;
-  hasWhatsappAPI: boolean;
-  whatsappProvider: "twilio" | "gupshup" | "interakt" | null;
-  smsEnabled: boolean;
-  emailEnabled: boolean;
-  razorpayEnabled: boolean;
-  autoReminders: boolean;
-  reminderSchedule: {
-    firstReminder: number; // days before due
-    secondReminder: number; // days after due
-    thirdReminder: number;
-    escalation: number;
-  };
-  aiProvider: "gemini" | "openrouter" | "groq";
+export interface PaymentQrCode {
+  id: string;
+  userId: string;
+  invoiceId: string;
+  upiId: string;
+  qrImageUrl: string;
+  createdAt: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  userId: string;
+  action: string;
+  description: string;
+  ipAddress?: string;
+  createdAt: string;
 }
 
 export interface DashboardStats {
@@ -90,10 +153,98 @@ export interface DashboardStats {
   };
 }
 
+export interface MSMESettings {
+  defaultNotificationMode: "whatsapp" | "sms" | "email" | "multi";
+  fallbackEnabled: boolean;
+  hasWhatsappAPI: boolean;
+  whatsappProvider: "twilio" | "gupshup" | "interakt" | null;
+  smsEnabled: boolean;
+  emailEnabled: boolean;
+  razorpayEnabled: boolean;
+  autoReminders: boolean;
+  reminderSchedule: {
+    firstReminder: number;
+    secondReminder: number;
+    thirdReminder: number;
+    escalation: number;
+  };
+  aiProvider: "gemini" | "openrouter" | "groq";
+}
+
 export interface NotificationResult {
   resolvedMode: "whatsapp" | "sms" | "email" | "multi";
   whatsapp: "sent" | "skipped" | "failed";
   sms: "sent" | "skipped" | "failed";
   email: "sent" | "skipped" | "failed";
   clickToChatLink?: string;
+}
+
+// Helper to convert snake_case DB rows to camelCase
+export function mapUser(row: any): User {
+  return {
+    id: row.id,
+    authUserId: row.auth_user_id,
+    businessName: row.business_name || "",
+    ownerName: row.owner_name || "",
+    phone: row.phone || "",
+    businessEmail: row.business_email || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    name: row.owner_name || row.business_name || "",
+    email: row.business_email || "",
+    companyName: row.business_name || "",
+    companyLocation: "",
+    cinNumber: "",
+    role: "admin",
+  };
+}
+
+export function mapCustomer(row: any): Customer {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    phone: row.phone || "",
+    email: row.email || "",
+    companyName: row.company_name || "",
+    notes: row.notes || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapInvoice(row: any): Invoice {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    customerId: row.customer_id,
+    invoiceNumber: row.invoice_number,
+    amount: parseFloat(row.amount) || 0,
+    currency: row.currency || "INR",
+    dueDate: row.due_date || "",
+    status: row.status || "pending",
+    paymentLink: row.payment_link,
+    upiId: row.upi_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    invoiceDate: row.created_at,
+    paidAmount: row.status === "paid" ? parseFloat(row.amount) || 0 : 0,
+    source: "upload",
+    remindersSent: 0,
+  };
+}
+
+export function mapReminderLog(row: any): ReminderLog {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    invoiceId: row.invoice_id,
+    customerId: row.customer_id,
+    channel: row.channel,
+    recipient: row.recipient || "",
+    message: row.message || "",
+    status: row.status || "pending",
+    providerResponse: row.provider_response,
+    sentAt: row.sent_at,
+  };
 }
