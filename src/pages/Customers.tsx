@@ -262,8 +262,8 @@ export default function Customers() {
                     <span className="text-sm text-muted-foreground">Analyzing payment patterns...</span>
                   </div>
                 ) : (
-                  <div className="text-sm text-foreground whitespace-pre-wrap bg-secondary/20 rounded-lg p-3 leading-relaxed">
-                    {aiExplanation}
+                  <div className="space-y-3">
+                    {formatAiExplanation(aiExplanation)}
                   </div>
                 )}
               </div>
