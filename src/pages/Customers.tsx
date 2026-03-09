@@ -9,15 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, AlertTriangle, CheckCircle, AlertCircle, User, Upload, Brain, Loader2, TrendingUp, Info } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, AlertCircle, User, Upload, Brain, Loader2, TrendingUp, Info, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 function formatAiExplanation(text: string) {
   if (!text) return <p className="text-sm text-muted-foreground">No analysis available.</p>;
-
   const sections: { icon: React.ReactNode; title: string; content: string }[] = [];
   const lines = text.split("\n").filter((l) => l.trim());
-
   let currentTitle = "";
   let currentContent: string[] = [];
 
@@ -39,13 +38,8 @@ function formatAiExplanation(text: string) {
   for (const line of lines) {
     const cleaned = line.replace(/^[\d]+[\.\)]\s*/, "").replace(/^\*\*/, "").replace(/\*\*$/, "").replace(/\*\*/g, "").trim();
     const isHeader = /^[\d]+[\.\)]/.test(line.trim()) || (line.startsWith("**") && line.endsWith("**")) || line.startsWith("📌") || line.startsWith("# ");
-
-    if (isHeader) {
-      flushSection();
-      currentTitle = cleaned;
-    } else {
-      currentContent.push(cleaned);
-    }
+    if (isHeader) { flushSection(); currentTitle = cleaned; }
+    else { currentContent.push(cleaned); }
   }
   flushSection();
 
@@ -74,6 +68,12 @@ const RISK_CONFIG = {
   high: { color: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertTriangle, label: "High Risk" },
 };
 
+function getAiSuggestion(c: Customer): string {
+  if ((c.riskLevel || "low") === "high") return "⚡ Escalate reminders. Consider advance payments.";
+  if ((c.riskLevel || "low") === "medium") return "📋 Increase follow-up frequency.";
+  return "✅ Reliable payer. Maintain current terms.";
+}
+
 export default function Customers() {
   const { customers, invoices, hasData } = useInvoiceData();
   const navigate = useNavigate();
@@ -82,6 +82,7 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [aiExplanation, setAiExplanation] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   if (!hasData) {
     return (
@@ -90,9 +91,7 @@ export default function Customers() {
           <User className="w-12 h-12 text-muted-foreground/40 mx-auto" />
           <h2 className="text-lg font-bold text-foreground">No Customers</h2>
           <p className="text-sm text-muted-foreground">Upload an invoice file to automatically generate customer profiles with risk scoring.</p>
-          <Button onClick={() => navigate("/upload")} className="gap-2">
-            <Upload className="w-4 h-4" /> Go to Upload
-          </Button>
+          <Button onClick={() => navigate("/upload")} className="gap-2"><Upload className="w-4 h-4" /> Go to Upload</Button>
         </Card>
       </div>
     );
@@ -111,65 +110,31 @@ export default function Customers() {
     setSelectedCustomer(customer);
     setAiExplanation("");
     setAiLoading(true);
-
-    const customerInvoices = invoices.filter(
-      (i) => i.customerName.toLowerCase() === customer.name.toLowerCase()
-    );
+    const customerInvoices = invoices.filter((i) => i.customerName?.toLowerCase() === customer.name.toLowerCase());
 
     try {
       const response = await fetch("http://localhost:3001/api/ai/risk-explain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer: {
-            name: customer.name,
-            totalInvoices: customer.totalInvoices,
-            totalOutstanding: customer.totalOutstanding,
-            totalPaid: customer.totalPaid,
-            avgPaymentDelay: customer.avgPaymentDelay,
-            riskScore: customer.riskScore,
-            riskLevel: customer.riskLevel,
-          },
-          invoices: customerInvoices.map((i) => ({
-            invoiceNumber: i.invoiceNumber,
-            amount: i.amount,
-            paidAmount: i.paidAmount,
-            status: i.status,
-            invoiceDate: i.invoiceDate,
-            dueDate: i.dueDate,
-            remindersSent: i.remindersSent,
-          })),
+          customer: { name: customer.name, totalInvoices: customer.totalInvoices, totalOutstanding: customer.totalOutstanding, totalPaid: customer.totalPaid, avgPaymentDelay: customer.avgPaymentDelay, riskScore: customer.riskScore, riskLevel: customer.riskLevel },
+          invoices: customerInvoices.map((i) => ({ invoiceNumber: i.invoiceNumber, amount: i.amount, paidAmount: i.paidAmount, status: i.status, invoiceDate: i.invoiceDate, dueDate: i.dueDate, remindersSent: i.remindersSent })),
         }),
       });
-
       if (!response.ok) throw new Error("AI service unavailable");
       const data = await response.json();
       setAiExplanation(data.explanation || "Unable to generate explanation.");
     } catch {
-      // Fallback local explanation
       const reasons: string[] = [];
-      if (customer.avgPaymentDelay > 30) reasons.push(`High average payment delay of ${customer.avgPaymentDelay} days indicates consistent late payments.`);
-      else if (customer.avgPaymentDelay > 15) reasons.push(`Moderate payment delay of ${customer.avgPaymentDelay} days.`);
-      else reasons.push(`Payment delay of ${customer.avgPaymentDelay} days is within acceptable range.`);
-
-      const outRatio = customer.totalOutstanding / Math.max(1, customer.totalOutstanding + customer.totalPaid);
-      if (outRatio > 0.6) reasons.push(`${(outRatio * 100).toFixed(0)}% of total invoiced amount remains outstanding — significant exposure.`);
-      else if (outRatio > 0.3) reasons.push(`${(outRatio * 100).toFixed(0)}% outstanding balance is moderate.`);
-      else reasons.push(`Only ${(outRatio * 100).toFixed(0)}% outstanding — good payment track record.`);
-
-      const overdueCount = customerInvoices.filter((i) => i.status === "overdue").length;
-      if (overdueCount > 0) reasons.push(`${overdueCount} invoice(s) currently overdue.`);
-
-      reasons.push(`Risk score: ${(customer.riskScore * 100).toFixed(0)}% — classified as ${customer.riskLevel.toUpperCase()} risk.`);
-
-      if (customer.riskLevel === "high") {
-        reasons.push("\n📌 Recommendation: Escalate reminders, consider reducing credit limits, and require advance payments for new orders.");
-      } else if (customer.riskLevel === "medium") {
-        reasons.push("\n📌 Recommendation: Increase reminder frequency and monitor closely for any deterioration in payment patterns.");
-      } else {
-        reasons.push("\n📌 Recommendation: Continue standard terms. This is a reliable customer.");
-      }
-
+      if ((customer.avgPaymentDelay || 0) > 30) reasons.push(`High average payment delay of ${customer.avgPaymentDelay} days.`);
+      else if ((customer.avgPaymentDelay || 0) > 15) reasons.push(`Moderate payment delay of ${customer.avgPaymentDelay} days.`);
+      else reasons.push(`Payment delay of ${customer.avgPaymentDelay || 0} days is within range.`);
+      const outRatio = (customer.totalOutstanding || 0) / Math.max(1, (customer.totalOutstanding || 0) + (customer.totalPaid || 0));
+      reasons.push(`${(outRatio * 100).toFixed(0)}% outstanding.`);
+      reasons.push(`Risk score: ${((customer.riskScore || 0) * 100).toFixed(0)}% — ${(customer.riskLevel || "low").toUpperCase()} risk.`);
+      if (customer.riskLevel === "high") reasons.push("\n📌 Recommendation: Escalate reminders, reduce credit limits.");
+      else if (customer.riskLevel === "medium") reasons.push("\n📌 Recommendation: Increase reminder frequency.");
+      else reasons.push("\n📌 Recommendation: Continue standard terms.");
       setAiExplanation(reasons.join("\n\n"));
     } finally {
       setAiLoading(false);
@@ -201,77 +166,90 @@ export default function Customers() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((c) => {
-          const risk = RISK_CONFIG[c.riskLevel];
+          const risk = RISK_CONFIG[c.riskLevel || "low"];
           const RiskIcon = risk.icon;
-          const customerInvoices = invoices.filter(
-            (i) => i.customerName.toLowerCase() === c.name.toLowerCase()
-          );
+          const customerInvoices = invoices.filter((i) => i.customerName?.toLowerCase() === c.name.toLowerCase());
+          const isHovered = hoveredCard === c.id;
 
           return (
-            <Card key={c.id} className="p-4 bg-card border-border/50 space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{c.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{c.email || "No email"}</p>
-                  </div>
-                </div>
-                <button onClick={() => handleRiskExplain(c)}>
-                  <Badge variant="outline" className={`text-[10px] gap-1 cursor-pointer hover:opacity-80 transition-opacity ${risk.color}`}>
-                    <RiskIcon className="w-3 h-3" />
-                    {c.riskLevel}
-                  </Badge>
-                </button>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-muted-foreground">Risk Score</span>
-                  <span className="text-xs font-mono font-bold text-foreground">{(c.riskScore * 100).toFixed(0)}%</span>
-                </div>
-                <Progress value={c.riskScore * 100} className="h-1.5" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-secondary/30 rounded-lg p-2">
-                  <p className="text-muted-foreground text-[10px]">Outstanding</p>
-                  <p className="font-mono font-semibold text-foreground">{formatINR(c.totalOutstanding)}</p>
-                </div>
-                <div className="bg-secondary/30 rounded-lg p-2">
-                  <p className="text-muted-foreground text-[10px]">Total Paid</p>
-                  <p className="font-mono font-semibold text-foreground">{formatINR(c.totalPaid)}</p>
-                </div>
-                <div className="bg-secondary/30 rounded-lg p-2">
-                  <p className="text-muted-foreground text-[10px]">Invoices</p>
-                  <p className="font-mono font-semibold text-foreground">{c.totalInvoices}</p>
-                </div>
-                <div className="bg-secondary/30 rounded-lg p-2">
-                  <p className="text-muted-foreground text-[10px]">Avg Delay</p>
-                  <p className="font-mono font-semibold text-foreground">{c.avgPaymentDelay} days</p>
-                </div>
-              </div>
-
-              {/* Scrollable invoice list */}
-              <ScrollArea className="max-h-32">
-                <div className="space-y-1">
-                  {customerInvoices.map((inv) => (
-                    <div key={inv.id} className="flex items-center justify-between text-[10px] px-1 py-0.5 rounded bg-secondary/20">
-                      <span className="font-mono text-foreground">{inv.invoiceNumber}</span>
-                      <span className="text-muted-foreground">{formatINR(inv.amount)}</span>
-                      <Badge variant="outline" className={`text-[8px] px-1 py-0 ${STATUS_COLORS[inv.status] || ""}`}>{inv.status}</Badge>
+            <motion.div
+              key={c.id}
+              onMouseEnter={() => setHoveredCard(c.id)}
+              onMouseLeave={() => setHoveredCard(null)}
+              whileHover={{ y: -4, scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            >
+              <Card className={`p-4 bg-card border-border/50 space-y-3 transition-all duration-200 ${isHovered ? "border-primary/40 shadow-lg ring-1 ring-primary/20" : ""}`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isHovered ? "bg-primary/10" : "bg-secondary"}`}>
+                      <User className={`w-4 h-4 ${isHovered ? "text-primary" : "text-muted-foreground"}`} />
                     </div>
-                  ))}
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{c.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{c.email || "No email"}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => handleRiskExplain(c)}>
+                    <Badge variant="outline" className={`text-[10px] gap-1 cursor-pointer hover:opacity-80 transition-opacity ${risk.color}`}>
+                      <RiskIcon className="w-3 h-3" />
+                      {c.riskLevel}
+                    </Badge>
+                  </button>
                 </div>
-              </ScrollArea>
 
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/30">
-                <span>Phone: {c.phone || "—"}</span>
-                <span className="capitalize">Pref: {c.notificationPreference || "Default"}</span>
-              </div>
-            </Card>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-muted-foreground">Risk Score</span>
+                    <span className="text-xs font-mono font-bold text-foreground">{((c.riskScore || 0) * 100).toFixed(0)}%</span>
+                  </div>
+                  <Progress value={(c.riskScore || 0) * 100} className="h-1.5" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-secondary/30 rounded-lg p-2">
+                    <p className="text-muted-foreground text-[10px]">Outstanding</p>
+                    <p className="font-mono font-semibold text-foreground">{formatINR(c.totalOutstanding || 0)}</p>
+                  </div>
+                  <div className="bg-secondary/30 rounded-lg p-2">
+                    <p className="text-muted-foreground text-[10px]">Total Paid</p>
+                    <p className="font-mono font-semibold text-foreground">{formatINR(c.totalPaid || 0)}</p>
+                  </div>
+                  <div className="bg-secondary/30 rounded-lg p-2">
+                    <p className="text-muted-foreground text-[10px]">Invoices</p>
+                    <p className="font-mono font-semibold text-foreground">{c.totalInvoices || 0}</p>
+                  </div>
+                  <div className="bg-secondary/30 rounded-lg p-2">
+                    <p className="text-muted-foreground text-[10px]">Avg Delay</p>
+                    <p className="font-mono font-semibold text-foreground">{c.avgPaymentDelay || 0} days</p>
+                  </div>
+                </div>
+
+                {/* AI Suggestion - always visible */}
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/10">
+                  <Sparkles className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-foreground leading-relaxed">{getAiSuggestion(c)}</p>
+                </div>
+
+                {/* Scrollable invoice list */}
+                <ScrollArea className="max-h-28">
+                  <div className="space-y-1">
+                    {customerInvoices.map((inv) => (
+                      <div key={inv.id} className="flex items-center justify-between text-[10px] px-1 py-0.5 rounded bg-secondary/20">
+                        <span className="font-mono text-foreground">{inv.invoiceNumber}</span>
+                        <span className="text-muted-foreground">{formatINR(inv.amount)}</span>
+                        <Badge variant="outline" className={`text-[8px] px-1 py-0 ${STATUS_COLORS[inv.status] || ""}`}>{inv.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/30">
+                  <span>Phone: {c.phone || "—"}</span>
+                  <span className="capitalize">Pref: {c.notificationPreference || "Default"}</span>
+                </div>
+              </Card>
+            </motion.div>
           );
         })}
       </div>
@@ -288,23 +266,23 @@ export default function Customers() {
           {selectedCustomer && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <Badge variant="outline" className={`${RISK_CONFIG[selectedCustomer.riskLevel].color}`}>
-                  {selectedCustomer.riskLevel.toUpperCase()} RISK
+                <Badge variant="outline" className={`${RISK_CONFIG[selectedCustomer.riskLevel || "low"].color}`}>
+                  {(selectedCustomer.riskLevel || "low").toUpperCase()} RISK
                 </Badge>
-                <span className="text-sm font-mono font-bold text-foreground">{(selectedCustomer.riskScore * 100).toFixed(0)}%</span>
+                <span className="text-sm font-mono font-bold text-foreground">{((selectedCustomer.riskScore || 0) * 100).toFixed(0)}%</span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="bg-secondary/30 rounded-lg p-2 text-center">
                   <p className="text-muted-foreground text-[10px]">Outstanding</p>
-                  <p className="font-mono font-semibold text-foreground">{formatINR(selectedCustomer.totalOutstanding)}</p>
+                  <p className="font-mono font-semibold text-foreground">{formatINR(selectedCustomer.totalOutstanding || 0)}</p>
                 </div>
                 <div className="bg-secondary/30 rounded-lg p-2 text-center">
                   <p className="text-muted-foreground text-[10px]">Total Paid</p>
-                  <p className="font-mono font-semibold text-foreground">{formatINR(selectedCustomer.totalPaid)}</p>
+                  <p className="font-mono font-semibold text-foreground">{formatINR(selectedCustomer.totalPaid || 0)}</p>
                 </div>
                 <div className="bg-secondary/30 rounded-lg p-2 text-center">
                   <p className="text-muted-foreground text-[10px]">Avg Delay</p>
-                  <p className="font-mono font-semibold text-foreground">{selectedCustomer.avgPaymentDelay}d</p>
+                  <p className="font-mono font-semibold text-foreground">{selectedCustomer.avgPaymentDelay || 0}d</p>
                 </div>
               </div>
               <div className="border-t border-border/50 pt-3">
@@ -317,9 +295,7 @@ export default function Customers() {
                     <span className="text-sm text-muted-foreground">Analyzing payment patterns...</span>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {formatAiExplanation(aiExplanation)}
-                  </div>
+                  <div className="space-y-3">{formatAiExplanation(aiExplanation)}</div>
                 )}
               </div>
             </div>
