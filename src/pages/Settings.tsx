@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Save, CreditCard, Building2, Lock, Shield, QrCode, KeyRound, Trash2, AlertTriangle } from "lucide-react";
+import { Save, CreditCard, Building2, Lock, Shield, QrCode, KeyRound, Trash2, AlertTriangle, PenLine, User, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function SettingsPage() {
@@ -36,44 +36,76 @@ export default function SettingsPage() {
   const [forgotNewPassword, setForgotNewPassword] = useState("");
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
 
-  // Payment keys
+  // Payment keys - Razorpay + PayPal (replaced Stripe)
   const [razorpayKey, setRazorpayKey] = useState("");
   const [razorpaySecret, setRazorpaySecret] = useState("");
-  const [razorpayEnabled, setRazorpayEnabled] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("payrecovery_settings") || "{}").razorpayEnabled || false; } catch { return false; }
-  });
-  const [stripeKey, setStripeKey] = useState("");
-  const [stripeSecret, setStripeSecret] = useState("");
-  const [stripeEnabled, setStripeEnabled] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("payrecovery_settings") || "{}").stripeEnabled || false; } catch { return false; }
-  });
+  const [razorpayEnabled, setRazorpayEnabled] = useState(false);
+  const [paypalClientId, setPaypalClientId] = useState("");
+  const [paypalSecret, setPaypalSecret] = useState("");
+  const [paypalEnabled, setPaypalEnabled] = useState(false);
   const [upiId, setUpiId] = useState(() => localStorage.getItem("payrecovery_upi_id") || "");
   const [upiName, setUpiName] = useState(() => localStorage.getItem("payrecovery_upi_name") || "");
+
+  // Company edit mode
+  const [companyEditMode, setCompanyEditMode] = useState(false);
+  const [companyForm, setCompanyForm] = useState({
+    companyName: user?.companyName || "",
+    companyLocation: user?.companyLocation || "",
+    email: user?.email || "",
+    cinNumber: user?.cinNumber || "",
+  });
+
+  // Profile
+  const [profileEditMode, setProfileEditMode] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+  });
+
+  useEffect(() => {
+    setCompanyForm({
+      companyName: user?.companyName || "",
+      companyLocation: user?.companyLocation || "",
+      email: user?.email || "",
+      cinNumber: user?.cinNumber || "",
+    });
+    setProfileForm({ name: user?.name || "", phone: user?.phone || "" });
+  }, [user]);
+
+  // Load keys from DB
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from("api_key_vault").select("*").eq("user_id", user.id).then(({ data }) => {
+      if (!data) return;
+      data.forEach((row: any) => {
+        if (row.provider === "razorpay" && row.key_name === "key_id") { setRazorpayKey(row.key_value_encrypted || ""); setRazorpayEnabled(true); }
+        if (row.provider === "razorpay" && row.key_name === "key_secret") setRazorpaySecret(row.key_value_encrypted || "");
+        if (row.provider === "paypal" && row.key_name === "client_id") { setPaypalClientId(row.key_value_encrypted || ""); setPaypalEnabled(true); }
+        if (row.provider === "paypal" && row.key_name === "client_secret") setPaypalSecret(row.key_value_encrypted || "");
+        if (row.provider === "upi" && row.key_name === "upi_id") setUpiId(row.key_value_encrypted || "");
+        if (row.provider === "upi" && row.key_name === "upi_name") setUpiName(row.key_value_encrypted || "");
+      });
+    });
+  }, [user?.id]);
 
   const handleSave = () => {
     localStorage.setItem("payrecovery_upi_id", upiId);
     localStorage.setItem("payrecovery_upi_name", upiName);
-    const existing = JSON.parse(localStorage.getItem("payrecovery_settings") || "{}");
-    localStorage.setItem("payrecovery_settings", JSON.stringify({ ...existing, razorpayEnabled, stripeEnabled }));
     toast.success("Settings saved successfully");
   };
 
-  // --- Initial password setup OTP (via SMTP) ---
   const handleSendOtp = async () => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setGeneratedOtp(code);
     setOtpSent(true);
-    // Try sending via SMTP backend
     try {
       const smtpConfig = JSON.parse(localStorage.getItem("payrecovery_smtp") || "{}");
       if (smtpConfig.smtpServer && smtpConfig.smtpPassword) {
         await fetch("http://localhost:3001/api/email/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             smtp: { host: smtpConfig.smtpServer, port: parseInt(smtpConfig.smtpPort || "587"), email: smtpConfig.senderEmail || smtpConfig.smtpUsername, username: smtpConfig.smtpUsername, password: smtpConfig.smtpPassword, tls: smtpConfig.useTls !== false },
-            to: user?.email || "",
-            subject: "PayRecovery - Payment Security OTP",
+            to: user?.email || "", subject: "PayRecovery - Payment Security OTP",
             message: `Your OTP for payment security setup is: ${code}\n\nThis OTP is valid for 10 minutes.\n\n- PayRecovery AI`,
           }),
         });
@@ -106,7 +138,6 @@ export default function SettingsPage() {
     setPaymentPassword("");
   };
 
-  // --- Forgot password flow ---
   const handleForgotSendOtp = async () => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setForgotGeneratedOtp(code);
@@ -115,12 +146,10 @@ export default function SettingsPage() {
       const smtpConfig = JSON.parse(localStorage.getItem("payrecovery_smtp") || "{}");
       if (smtpConfig.smtpServer && smtpConfig.smtpPassword) {
         await fetch("http://localhost:3001/api/email/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             smtp: { host: smtpConfig.smtpServer, port: parseInt(smtpConfig.smtpPort || "587"), email: smtpConfig.senderEmail || smtpConfig.smtpUsername, username: smtpConfig.smtpUsername, password: smtpConfig.smtpPassword, tls: smtpConfig.useTls !== false },
-            to: user?.email || "",
-            subject: "PayRecovery - Password Reset OTP",
+            to: user?.email || "", subject: "PayRecovery - Password Reset OTP",
             message: `Your OTP for password reset is: ${code}\n\nThis OTP is valid for 10 minutes.\n\n- PayRecovery AI`,
           }),
         });
@@ -142,21 +171,84 @@ export default function SettingsPage() {
     localStorage.setItem("payrecovery_pay_password", btoa(forgotNewPassword));
     setForgotMode(false); setForgotOtpSent(false); setForgotOtpVerified(false);
     setForgotOtp(""); setForgotNewPassword(""); setForgotConfirmPassword("");
-    toast.success("Password reset successfully! You can now unlock with your new password.");
+    toast.success("Password reset successfully!");
+  };
+
+  const upsertKey = async (provider: string, keyName: string, value: string) => {
+    if (!user?.id) return;
+    const { data: existing } = await supabase
+      .from("api_key_vault")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("provider", provider)
+      .eq("key_name", keyName)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("api_key_vault").update({ key_value_encrypted: value }).eq("id", existing.id);
+    } else {
+      await supabase.from("api_key_vault").insert({ user_id: user.id, provider, key_name: keyName, key_value_encrypted: value });
+    }
   };
 
   const handleSaveKeys = async () => {
     try {
-      await fetch("http://localhost:3001/api/settings/payment-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ razorpayKey, razorpaySecret, stripeKey, stripeSecret, upiId, upiName }),
-      });
-      toast.success("Payment keys saved to backend");
-    } catch {
+      // Save all keys to DB
+      if (razorpayEnabled) {
+        await upsertKey("razorpay", "key_id", razorpayKey);
+        await upsertKey("razorpay", "key_secret", razorpaySecret);
+      }
+      if (paypalEnabled) {
+        await upsertKey("paypal", "client_id", paypalClientId);
+        await upsertKey("paypal", "client_secret", paypalSecret);
+      }
+      await upsertKey("upi", "upi_id", upiId);
+      await upsertKey("upi", "upi_name", upiName);
+
+      // Also save locally for quick access
       localStorage.setItem("payrecovery_upi_id", upiId);
       localStorage.setItem("payrecovery_upi_name", upiName);
-      toast.success("UPI settings saved locally (backend unavailable for API keys)");
+
+      // Also push to backend .env
+      try {
+        await fetch("http://localhost:3001/api/settings/payment-keys", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ razorpayKey, razorpaySecret, upiId, upiName }),
+        });
+      } catch { /* backend may be offline */ }
+
+      toast.success("Payment keys saved to database");
+      setPaymentUnlocked(false); // auto-close/lock after save
+    } catch {
+      toast.error("Failed to save keys");
+    }
+  };
+
+  const handleSaveCompany = async () => {
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          companyName: companyForm.companyName,
+          companyLocation: companyForm.companyLocation,
+          cinNumber: companyForm.cinNumber,
+        },
+      });
+      toast.success("Company details updated");
+      setCompanyEditMode(false);
+    } catch {
+      toast.error("Failed to update company details");
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await supabase.auth.updateUser({
+        data: { name: profileForm.name, phone: profileForm.phone },
+      });
+      toast.success("Profile updated");
+      setProfileEditMode(false);
+    } catch {
+      toast.error("Failed to update profile");
     }
   };
 
@@ -174,7 +266,7 @@ export default function SettingsPage() {
         <TabsList className="bg-secondary/50 border border-border/50">
           <TabsTrigger value="payment" className="text-xs gap-1"><CreditCard className="w-3 h-3" /> Payment</TabsTrigger>
           <TabsTrigger value="company" className="text-xs gap-1"><Building2 className="w-3 h-3" /> Company</TabsTrigger>
-          <TabsTrigger value="account" className="text-xs gap-1"><Trash2 className="w-3 h-3" /> Account</TabsTrigger>
+          <TabsTrigger value="account" className="text-xs gap-1"><User className="w-3 h-3" /> Account</TabsTrigger>
         </TabsList>
 
         {/* Payment */}
@@ -210,7 +302,7 @@ export default function SettingsPage() {
                   <KeyRound className="w-6 h-6 text-primary" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Reset Payment Password</h3>
-                    <p className="text-xs text-muted-foreground">We'll send an OTP to {user?.email} to verify your identity</p>
+                    <p className="text-xs text-muted-foreground">We'll send an OTP to {user?.email}</p>
                   </div>
                 </div>
                 {!forgotOtpSent ? (
@@ -220,12 +312,12 @@ export default function SettingsPage() {
                   </div>
                 ) : !forgotOtpVerified ? (
                   <div className="space-y-3">
-                    <div className="space-y-1"><Label className="text-xs">Enter OTP sent to {user?.email}</Label><Input value={forgotOtp} onChange={(e) => setForgotOtp(e.target.value)} placeholder="6-digit code" maxLength={6} /></div>
+                    <div className="space-y-1"><Label className="text-xs">Enter OTP</Label><Input value={forgotOtp} onChange={(e) => setForgotOtp(e.target.value)} placeholder="6-digit code" maxLength={6} /></div>
                     <div className="flex gap-2">
                       <Button onClick={handleForgotVerifyOtp}>Verify OTP</Button>
-                      <Button variant="ghost" size="sm" onClick={handleForgotSendOtp}>Resend OTP</Button>
+                      <Button variant="ghost" size="sm" onClick={handleForgotSendOtp}>Resend</Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => { setForgotMode(false); setForgotOtpSent(false); }}>Back to login</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setForgotMode(false); setForgotOtpSent(false); }}>Back</Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -248,9 +340,7 @@ export default function SettingsPage() {
                   <Input type="password" placeholder="Enter password" value={paymentPassword} onChange={(e) => setPaymentPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleUnlockPayment()} className="max-w-xs" />
                   <Button onClick={handleUnlockPayment}>Unlock</Button>
                 </div>
-                <button onClick={() => setForgotMode(true)} className="text-xs text-primary hover:underline">
-                  Forgot password?
-                </button>
+                <button onClick={() => setForgotMode(true)} className="text-xs text-primary hover:underline">Forgot password?</button>
               </Card>
             )
           ) : (
@@ -274,28 +364,28 @@ export default function SettingsPage() {
                 {razorpayEnabled && (
                   <div className="space-y-3">
                     <div className="space-y-1"><Label className="text-xs">Razorpay Key ID</Label>
-                      <Input placeholder="rzp_live_xxxxxxxxxxxx" type="password" value={razorpayKey} onChange={(e) => setRazorpayKey(e.target.value)} style={{ userSelect: "none" }} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} />
+                      <Input placeholder="rzp_live_xxxxxxxxxxxx" type="password" value={razorpayKey} onChange={(e) => setRazorpayKey(e.target.value)} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} />
                     </div>
                     <div className="space-y-1"><Label className="text-xs">Razorpay Key Secret</Label>
-                      <Input placeholder="••••••••••••" type="password" value={razorpaySecret} onChange={(e) => setRazorpaySecret(e.target.value)} style={{ userSelect: "none" }} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} />
+                      <Input placeholder="••••••••••••" type="password" value={razorpaySecret} onChange={(e) => setRazorpaySecret(e.target.value)} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} />
                     </div>
                   </div>
                 )}
               </Card>
 
-              {/* Stripe */}
+              {/* PayPal (replaced Stripe) */}
               <Card className="p-4 bg-card border-border/50 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-foreground">Stripe Integration</h3>
-                  <Switch checked={stripeEnabled} onCheckedChange={setStripeEnabled} />
+                  <h3 className="text-sm font-semibold text-foreground">PayPal Integration</h3>
+                  <Switch checked={paypalEnabled} onCheckedChange={setPaypalEnabled} />
                 </div>
-                {stripeEnabled && (
+                {paypalEnabled && (
                   <div className="space-y-3">
-                    <div className="space-y-1"><Label className="text-xs">Stripe Publishable Key</Label>
-                      <Input placeholder="pk_live_xxxxxxxxxxxx" type="password" value={stripeKey} onChange={(e) => setStripeKey(e.target.value)} style={{ userSelect: "none" }} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} />
+                    <div className="space-y-1"><Label className="text-xs">PayPal Client ID</Label>
+                      <Input placeholder="AYSq3RDGsmBLJE..." type="password" value={paypalClientId} onChange={(e) => setPaypalClientId(e.target.value)} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} />
                     </div>
-                    <div className="space-y-1"><Label className="text-xs">Stripe Secret Key</Label>
-                      <Input placeholder="sk_live_xxxxxxxxxxxx" type="password" value={stripeSecret} onChange={(e) => setStripeSecret(e.target.value)} style={{ userSelect: "none" }} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} />
+                    <div className="space-y-1"><Label className="text-xs">PayPal Secret</Label>
+                      <Input placeholder="••••••••••••" type="password" value={paypalSecret} onChange={(e) => setPaypalSecret(e.target.value)} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} />
                     </div>
                   </div>
                 )}
@@ -312,25 +402,101 @@ export default function SettingsPage() {
         {/* Company */}
         <TabsContent value="company" className="mt-4 space-y-4">
           <Card className="p-4 bg-card border-border/50 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Company Information</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Company Information</h3>
+              {!companyEditMode ? (
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => setCompanyEditMode(true)}>
+                  <PenLine className="w-3 h-3" /> Edit
+                </Button>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => setCompanyEditMode(false)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { label: "Company Name", value: user?.companyName || "" },
-                { label: "Location", value: user?.companyLocation || "" },
-                { label: "Email", value: user?.email || "" },
-                { label: "CIN Number", value: user?.cinNumber || "Not provided" },
+                { label: "Company Name", key: "companyName", value: companyEditMode ? companyForm.companyName : (user?.companyName || "—") },
+                { label: "Location", key: "companyLocation", value: companyEditMode ? companyForm.companyLocation : (user?.companyLocation || "—") },
+                { label: "Email", key: "email", value: user?.email || "—", readonly: true },
+                { label: "CIN Number", key: "cinNumber", value: companyEditMode ? companyForm.cinNumber : (user?.cinNumber || "—") },
               ].map((item) => (
                 <div key={item.label} className="space-y-1">
                   <Label className="text-xs">{item.label}</Label>
-                  <Input value={item.value} readOnly className="bg-secondary/30" />
+                  {companyEditMode && !item.readonly ? (
+                    <Input value={(companyForm as any)[item.key]} onChange={(e) => setCompanyForm({ ...companyForm, [item.key]: e.target.value })} />
+                  ) : (
+                    <div className="text-sm text-foreground bg-secondary/30 rounded-md px-3 py-2">{item.value}</div>
+                  )}
                 </div>
               ))}
             </div>
+            {companyEditMode && (
+              <Button size="sm" className="gap-2" onClick={handleSaveCompany}>
+                <Save className="w-4 h-4" /> Save Company Details
+              </Button>
+            )}
           </Card>
         </TabsContent>
 
-        {/* Account Deletion */}
+        {/* Account */}
         <TabsContent value="account" className="mt-4 space-y-4">
+          {/* Profile Section */}
+          <Card className="p-4 bg-card border-border/50 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Profile</h3>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+              </div>
+              {!profileEditMode ? (
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => setProfileEditMode(true)}>
+                  <PenLine className="w-3 h-3" /> Edit
+                </Button>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => setProfileEditMode(false)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Full Name</Label>
+                {profileEditMode ? (
+                  <Input value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} />
+                ) : (
+                  <div className="text-sm text-foreground bg-secondary/30 rounded-md px-3 py-2">{user?.name || "—"}</div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Phone</Label>
+                {profileEditMode ? (
+                  <Input value={profileForm.phone} onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} />
+                ) : (
+                  <div className="text-sm text-foreground bg-secondary/30 rounded-md px-3 py-2">{user?.phone || "—"}</div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Company</Label>
+                <div className="text-sm text-foreground bg-secondary/30 rounded-md px-3 py-2">{user?.companyName || "—"}</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Role</Label>
+                <div className="text-sm text-foreground bg-secondary/30 rounded-md px-3 py-2 capitalize">{user?.role || "admin"}</div>
+              </div>
+            </div>
+            {profileEditMode && (
+              <Button size="sm" className="gap-2" onClick={handleSaveProfile}>
+                <Save className="w-4 h-4" /> Save Profile
+              </Button>
+            )}
+          </Card>
+
+          {/* Delete Account */}
           <AccountDeletion />
         </TabsContent>
       </Tabs>
@@ -357,21 +523,13 @@ function AccountDeletion() {
 
   const handleRequestDeletion = async () => {
     const finalReason = reason === "Other" ? otherReason.trim() : reason;
-    if (!finalReason) {
-      toast.error("Please select a reason for deletion");
-      return;
-    }
-    if (confirmText !== "DELETE") {
-      toast.error("Please type DELETE to confirm");
-      return;
-    }
+    if (!finalReason) { toast.error("Please select a reason for deletion"); return; }
+    if (confirmText !== "DELETE") { toast.error("Please type DELETE to confirm"); return; }
 
     setLoading(true);
     try {
       const scheduledDate = new Date();
       scheduledDate.setDate(scheduledDate.getDate() + 30);
-
-      // Log the deletion request in activity_logs
       if (user?.id) {
         await supabase.from("activity_logs").insert({
           user_id: user.id,
@@ -379,16 +537,9 @@ function AccountDeletion() {
           description: `Account deletion scheduled for ${scheduledDate.toLocaleDateString()}. Reason: ${finalReason}`,
         });
       }
-
-      toast.success(
-        `Account deletion scheduled. Your account and all data will be permanently deleted on ${scheduledDate.toLocaleDateString()}. You can cancel this within 30 days by contacting support.`
-      );
+      toast.success(`Account deletion scheduled for ${scheduledDate.toLocaleDateString()}.`);
       setShowDialog(false);
-      setReason("");
-      setOtherReason("");
-      setConfirmText("");
-
-      // Sign out after scheduling
+      setReason(""); setOtherReason(""); setConfirmText("");
       setTimeout(() => logout(), 2000);
     } catch (err: any) {
       toast.error(err?.message || "Failed to schedule deletion");
@@ -406,17 +557,10 @@ function AccountDeletion() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">Delete Account</h3>
-            <p className="text-xs text-muted-foreground">
-              Permanently delete your account and all associated data. This action is irreversible after 30 days.
-            </p>
+            <p className="text-xs text-muted-foreground">Permanently delete your account and all data. Irreversible after 30 days.</p>
           </div>
         </div>
-        <Button
-          variant="destructive"
-          size="sm"
-          className="gap-2"
-          onClick={() => setShowDialog(true)}
-        >
+        <Button variant="destructive" size="sm" className="gap-2" onClick={() => setShowDialog(true)}>
           <Trash2 className="w-4 h-4" /> Request Account Deletion
         </Button>
       </Card>
@@ -424,15 +568,9 @@ function AccountDeletion() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" /> Delete Account
-            </DialogTitle>
-            <DialogDescription>
-              Your account will be scheduled for deletion in <span className="font-semibold text-foreground">30 days</span>. 
-              During this period you can contact support to cancel. After 30 days, all your data will be permanently removed.
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="w-5 h-5" /> Delete Account</DialogTitle>
+            <DialogDescription>Your account will be deleted in <span className="font-semibold text-foreground">30 days</span>.</DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Why are you leaving? *</Label>
@@ -444,37 +582,16 @@ function AccountDeletion() {
                   </div>
                 ))}
               </RadioGroup>
-              {reason === "Other" && (
-                <Textarea
-                  placeholder="Please tell us more..."
-                  value={otherReason}
-                  onChange={(e) => setOtherReason(e.target.value)}
-                  className="mt-2"
-                  rows={3}
-                />
-              )}
+              {reason === "Other" && <Textarea placeholder="Please tell us more..." value={otherReason} onChange={(e) => setOtherReason(e.target.value)} className="mt-2" rows={3} />}
             </div>
-
             <div className="space-y-2 pt-2 border-t border-border">
-              <Label className="text-sm font-medium">
-                Type <span className="font-mono text-destructive">DELETE</span> to confirm
-              </Label>
-              <Input
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder="Type DELETE"
-                className="font-mono"
-              />
+              <Label className="text-sm font-medium">Type <span className="font-mono text-destructive">DELETE</span> to confirm</Label>
+              <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="Type DELETE" className="font-mono" />
             </div>
           </div>
-
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={handleRequestDeletion}
-              disabled={loading || confirmText !== "DELETE" || !reason}
-            >
+            <Button variant="destructive" onClick={handleRequestDeletion} disabled={loading || confirmText !== "DELETE" || !reason}>
               {loading ? "Scheduling..." : "Schedule Deletion (30 days)"}
             </Button>
           </DialogFooter>

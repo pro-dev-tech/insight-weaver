@@ -37,14 +37,21 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         collapsed ? "w-16" : "w-60"
       )}
     >
-      {/* Brand */}
+      {/* Brand + Collapse toggle */}
       <div className="h-14 border-b border-border/50 flex items-center px-4 gap-2">
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
           <Shield className="w-4 h-4 text-primary" />
         </div>
         {!collapsed && (
-          <span className="text-sm font-bold gradient-text whitespace-nowrap">PayRecovery AI</span>
+          <span className="text-sm font-bold gradient-text whitespace-nowrap flex-1">PayRecovery AI</span>
         )}
+        <button
+          onClick={onToggle}
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors ml-auto flex-shrink-0"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
       </div>
 
       {/* Navigation */}
@@ -69,19 +76,13 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="p-2 border-t border-border/50 space-y-1">
+      <div className="p-2 border-t border-border/50">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors w-full"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           {!collapsed && <span>Logout</span>}
-        </button>
-        <button
-          onClick={onToggle}
-          className="flex items-center justify-center w-full py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-        >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
     </aside>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { MoneyRain } from "@/components/MoneyRain";
 import { Shield, ArrowRight, FileText, Zap, BarChart3, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { motion, type Easing } from "framer-motion";
@@ -12,8 +13,7 @@ import { motion, type Easing } from "framer-motion";
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
+    opacity: 1, y: 0,
     transition: { delay: i * 0.1, duration: 0.45, ease: "easeOut" as Easing },
   }),
 };
@@ -29,6 +29,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showMoneyRain, setShowMoneyRain] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -39,7 +40,8 @@ export default function Login() {
     try {
       await login(email, password);
       toast.success("Welcome back!");
-      navigate("/dashboard");
+      setShowMoneyRain(true);
+      setTimeout(() => navigate("/dashboard"), 2500);
     } catch {
       toast.error("Login failed");
     } finally {
@@ -49,6 +51,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background flex">
+      <MoneyRain active={showMoneyRain} />
       {/* Left panel */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden">
         <div className="absolute inset-0 bg-primary/5" />
@@ -69,14 +72,8 @@ export default function Login() {
           </motion.div>
           <div className="grid grid-cols-2 gap-3">
             {highlights.map((h, i) => (
-              <motion.div
-                key={h.text}
-                initial="hidden"
-                animate="visible"
-                variants={fadeUp}
-                custom={i + 1}
-                className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-background/60 border border-border/50 backdrop-blur-sm"
-              >
+              <motion.div key={h.text} initial="hidden" animate="visible" variants={fadeUp} custom={i + 1}
+                className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-background/60 border border-border/50 backdrop-blur-sm">
                 <h.icon className="w-4 h-4 text-primary shrink-0" />
                 <span className="text-xs font-medium text-foreground">{h.text}</span>
               </motion.div>
@@ -85,28 +82,15 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel */}
       <div className="flex-1 flex flex-col">
-        <div className="flex justify-end p-4">
-          <ThemeToggle />
-        </div>
+        <div className="flex justify-end p-4"><ThemeToggle /></div>
         <div className="flex-1 flex items-center justify-center p-8">
-          <motion.div
-            className="w-full max-w-sm space-y-8"
-            initial="hidden"
-            animate="visible"
-            variants={fadeUp}
-            custom={0}
-          >
+          <motion.div className="w-full max-w-sm space-y-8" initial="hidden" animate="visible" variants={fadeUp} custom={0}>
             <div className="text-center lg:text-left">
-              <motion.h2 variants={fadeUp} custom={0} className="text-2xl font-bold text-foreground">
-                Sign In
-              </motion.h2>
-              <motion.p variants={fadeUp} custom={1} className="text-sm text-muted-foreground mt-1">
-                Enter your credentials to access your dashboard
-              </motion.p>
+              <motion.h2 variants={fadeUp} custom={0} className="text-2xl font-bold text-foreground">Sign In</motion.h2>
+              <motion.p variants={fadeUp} custom={1} className="text-sm text-muted-foreground mt-1">Enter your credentials to access your dashboard</motion.p>
             </div>
-
             <motion.form onSubmit={handleSubmit} className="space-y-4" variants={fadeUp} custom={2}>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -120,14 +104,10 @@ export default function Login() {
                 {loading ? "Signing in..." : "Sign In"} <ArrowRight className="w-4 h-4" />
               </Button>
             </motion.form>
-
             <motion.div variants={fadeUp} custom={3} className="space-y-3">
               <p className="text-xs text-center text-muted-foreground">
                 Don't have an account?{" "}
                 <Link to="/register" className="text-primary hover:underline font-medium">Create one</Link>
-              </p>
-              <p className="text-[10px] text-center text-muted-foreground/50">
-                Secure authentication powered by industry standards
               </p>
             </motion.div>
           </motion.div>

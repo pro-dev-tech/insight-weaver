@@ -9,7 +9,7 @@ const path = require("path");
  */
 router.post("/payment-keys", async (req, res) => {
   try {
-    const { razorpayKey, razorpaySecret, stripeKey, stripeSecret, upiId, upiName } = req.body;
+    const { razorpayKey, razorpaySecret, paypalClientId, paypalSecret, upiId, upiName } = req.body;
 
     const envPath = path.join(__dirname, "..", ".env");
     let envContent = fs.readFileSync(envPath, "utf-8");
@@ -24,8 +24,8 @@ router.post("/payment-keys", async (req, res) => {
 
     if (razorpayKey !== undefined) envContent = updateEnvVar(envContent, "RAZORPAY_KEY_ID", razorpayKey);
     if (razorpaySecret !== undefined) envContent = updateEnvVar(envContent, "RAZORPAY_KEY_SECRET", razorpaySecret);
-    if (stripeKey !== undefined) envContent = updateEnvVar(envContent, "STRIPE_PUBLISHABLE_KEY", stripeKey);
-    if (stripeSecret !== undefined) envContent = updateEnvVar(envContent, "STRIPE_SECRET_KEY", stripeSecret);
+    if (paypalClientId !== undefined) envContent = updateEnvVar(envContent, "PAYPAL_CLIENT_ID", paypalClientId);
+    if (paypalSecret !== undefined) envContent = updateEnvVar(envContent, "PAYPAL_CLIENT_SECRET", paypalSecret);
 
     fs.writeFileSync(envPath, envContent);
 
@@ -43,7 +43,7 @@ router.post("/payment-keys", async (req, res) => {
 router.get("/payment-keys/status", (req, res) => {
   res.json({
     razorpay: !!process.env.RAZORPAY_KEY_ID,
-    stripe: !!process.env.STRIPE_SECRET_KEY,
+    paypal: !!process.env.PAYPAL_CLIENT_ID,
     gemini: !!process.env.GEMINI_API_KEY,
     openrouter: !!process.env.OPENROUTER_API_KEY,
     groq: !!process.env.GROQ_API_KEY,
