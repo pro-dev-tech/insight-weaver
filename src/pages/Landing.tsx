@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   FileText, BarChart3, Bell, Shield, Zap, Users, ArrowRight,
-  CheckCircle2, Clock, TrendingUp, Linkedin,
+  CheckCircle2, Clock, TrendingUp, Linkedin, ChevronDown,
 } from "lucide-react";
 import type { Easing } from "framer-motion";
 
@@ -67,15 +67,15 @@ function FeatureMarquee() {
           <motion.div
             key={`${f.title}-${i}`}
             className="flex-shrink-0 w-72"
-            whileHover={{ scale: 1.05, y: -8 }}
+            whileHover={{ scale: 1.07, y: -10, rotateZ: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 15 }}
           >
-            <Card className="h-full glass-card hover:border-primary/40 hover:shadow-lg transition-all duration-300 group cursor-pointer">
-              <CardContent className="p-5">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 group-hover:scale-110 transition-all">
+            <Card className="h-full border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group cursor-pointer">
+              <CardContent className="p-6">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center mb-4 group-hover:from-primary/25 group-hover:to-accent/25 group-hover:scale-110 transition-all duration-300">
                   <f.icon className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold text-sm mb-1.5">{f.title}</h3>
+                <h3 className="font-semibold text-sm mb-2 text-foreground">{f.title}</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
               </CardContent>
             </Card>
@@ -99,10 +99,11 @@ function ScrollProgressBar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
   return (
-    <div className="fixed top-0 left-0 right-0 z-[100] h-1">
-      <div
-        className="h-full bg-accent transition-all duration-75"
+    <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-border/30">
+      <motion.div
+        className="h-full bg-gradient-to-r from-primary via-accent to-primary"
         style={{ width: `${progress}%` }}
+        transition={{ duration: 0.1 }}
       />
     </div>
   );
@@ -116,20 +117,9 @@ function StrikingLines() {
         <motion.div
           key={i}
           className="absolute h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"
-          style={{
-            top: `${20 + i * 15}%`,
-            width: "120px",
-          }}
-          animate={{
-            x: [800, -200],
-            opacity: [0, 1, 1, 0],
-          }}
-          transition={{
-            duration: 0.8 + i * 0.15,
-            repeat: Infinity,
-            repeatDelay: 1 + i * 0.3,
-            ease: "easeOut",
-          }}
+          style={{ top: `${20 + i * 15}%`, width: "120px" }}
+          animate={{ x: [800, -200], opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 0.8 + i * 0.15, repeat: Infinity, repeatDelay: 1 + i * 0.3, ease: "easeOut" }}
         />
       ))}
     </div>
@@ -137,30 +127,47 @@ function StrikingLines() {
 }
 
 export default function Landing() {
+  const [navScrolled, setNavScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setNavScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <ScrollProgressBar />
 
       {/* Nav */}
-      <nav className="sticky top-1 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <nav className={`sticky top-1 z-50 transition-all duration-300 ${navScrolled ? "bg-background/90 backdrop-blur-xl shadow-sm border-b border-border/50" : "bg-transparent"}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
               <FileText className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold tracking-tight">InvoiceFlow</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
-            <a href="#about" className="hover:text-foreground transition-colors">About</a>
+            <a href="#features" className="hover:text-foreground transition-colors relative group">
+              Features
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+            </a>
+            <a href="#pricing" className="hover:text-foreground transition-colors relative group">
+              Pricing
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+            </a>
+            <a href="#about" className="hover:text-foreground transition-colors relative group">
+              About
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+            </a>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
-            <Button size="sm" asChild>
+            <Button size="sm" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-md" asChild>
               <Link to="/register">Get Started Free</Link>
             </Button>
           </div>
@@ -168,19 +175,28 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="relative py-24 md:py-36 px-6">
+      <section className="relative py-28 md:py-40 px-6">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent/5 blur-3xl" />
+          <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full bg-primary/5 blur-[120px]" />
+          <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent/5 blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/3 blur-[150px]" />
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
+          <motion.div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-8"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+          >
+            <Zap className="w-3 h-3" /> AI-Powered Invoice Recovery Platform
+          </motion.div>
           <motion.h1
-            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6"
+            className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6"
             initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
             Invoicing that{" "}
-            <span className="gradient-text relative inline-block">
-              moves as fast
+            <span className="relative inline-block">
+              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                moves as fast
+              </span>
               <StrikingLines />
             </span>
             <br />as your business
@@ -196,45 +212,60 @@ export default function Landing() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
             initial="hidden" animate="visible" variants={fadeUp} custom={2}
           >
-            <Button size="lg" className="text-base px-8" asChild>
+            <Button size="lg" className="text-base px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
                 Start Free — No Card Required <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-base px-8" asChild>
+            <Button size="lg" variant="outline" className="text-base px-8 border-border/60 hover:bg-secondary/50" asChild>
               <a href="#features">See How It Works</a>
             </Button>
+          </motion.div>
+          <motion.div
+            className="mt-16 flex justify-center"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
+          >
+            <a href="#stats" className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+              <ChevronDown className="w-6 h-6 animate-bounce" />
+            </a>
           </motion.div>
         </div>
       </section>
 
       {/* Stats Bar */}
-      <section className="border-y border-border/50 bg-muted/30">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border/50">
+      <section id="stats" className="border-y border-border/40 bg-card/50 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border/40">
           {stats.map((s, i) => (
             <motion.div
-              key={s.label} className="text-center py-8 px-4"
+              key={s.label} className="text-center py-10 px-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
             >
-              <p className="text-3xl font-bold font-mono tracking-tight text-foreground">{s.value}</p>
-              <p className="text-xs font-medium text-muted-foreground mt-1 uppercase tracking-wider">{s.label}</p>
+              <p className="text-3xl md:text-4xl font-bold font-mono tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.value}</p>
+              <p className="text-xs font-medium text-muted-foreground mt-1.5 uppercase tracking-wider">{s.label}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* Features - Infinite Marquee */}
-      <section id="features" className="py-24 px-6">
+      <section id="features" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <motion.h2
-              className="text-3xl md:text-4xl font-bold mb-4"
+          <div className="text-center mb-14">
+            <motion.div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium text-accent mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
-              Everything you need to <span className="gradient-text">get paid faster</span>
+              Features
+            </motion.div>
+            <motion.h2
+              className="text-3xl md:text-5xl font-bold mb-4"
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
+            >
+              Everything you need to{" "}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">get paid faster</span>
             </motion.h2>
             <motion.p
-              className="text-muted-foreground max-w-xl mx-auto"
+              className="text-muted-foreground max-w-xl mx-auto text-base"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}
             >
               A complete invoicing ecosystem designed for modern businesses.
@@ -245,14 +276,24 @@ export default function Landing() {
       </section>
 
       {/* How It Works */}
-      <section className="py-24 px-6 bg-muted/20">
-        <div className="max-w-5xl mx-auto">
+      <section className="py-28 px-6 bg-muted/20 relative">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-accent/3 blur-[100px]" />
+        </div>
+        <div className="max-w-5xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <motion.h2
-              className="text-3xl md:text-4xl font-bold mb-4"
+            <motion.div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
-              Up and running in <span className="gradient-text">3 simple steps</span>
+              How it works
+            </motion.div>
+            <motion.h2
+              className="text-3xl md:text-5xl font-bold mb-4"
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
+            >
+              Up and running in{" "}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">3 simple steps</span>
             </motion.h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -261,12 +302,16 @@ export default function Landing() {
               { step: "02", icon: FileText, title: "Create & Send", desc: "Build beautiful invoices with our editor. Add your logo, terms, and send instantly." },
               { step: "03", icon: TrendingUp, title: "Track & Grow", desc: "Monitor payments in real-time. Get insights to optimize your cash flow." },
             ].map((s, i) => (
-              <motion.div key={s.step} className="text-center" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-xl font-bold font-mono text-primary">{s.step}</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+              <motion.div key={s.step} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
+                <Card className="text-center border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group h-full">
+                  <CardContent className="p-8">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-5 group-hover:from-primary/20 group-hover:to-accent/20 group-hover:scale-110 transition-all duration-300">
+                      <span className="text-2xl font-bold font-mono bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.step}</span>
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">{s.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
@@ -274,43 +319,54 @@ export default function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-24 px-6">
+      <section id="pricing" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <motion.h2 className="text-3xl md:text-4xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-              Simple, transparent <span className="gradient-text">pricing</span>
+            <motion.div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-4"
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
+            >
+              Pricing
+            </motion.div>
+            <motion.h2 className="text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
+              Simple, transparent{" "}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">pricing</span>
             </motion.h2>
-            <motion.p className="text-muted-foreground" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
+            <motion.p className="text-muted-foreground text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
               No hidden fees. No surprises. Cancel anytime.
             </motion.p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {pricingPlans.map((plan, i) => (
               <motion.div key={plan.name} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <Card className={`h-full relative ${plan.highlighted ? "glow-border bg-card" : "glass-card"}`}>
+                <Card className={`h-full relative transition-all duration-300 group hover:shadow-xl ${plan.highlighted ? "border-primary/50 bg-card shadow-xl shadow-primary/10 scale-[1.02]" : "border-border/40 bg-card/80 hover:border-primary/30 hover:shadow-primary/5"}`}>
                   {plan.highlighted && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-primary text-primary-foreground uppercase tracking-wider">
+                      <span className="text-[10px] font-bold px-4 py-1.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground uppercase tracking-wider shadow-lg">
                         Most Popular
                       </span>
                     </div>
                   )}
-                  <CardContent className="p-7">
+                  <CardContent className="p-8">
                     <h3 className="font-semibold text-lg">{plan.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
-                    <div className="my-6">
+                    <div className="my-7">
                       <span className="text-4xl font-bold font-mono">{plan.price}</span>
                       <span className="text-muted-foreground text-sm">{plan.period}</span>
                     </div>
                     <ul className="space-y-3 mb-8">
                       {plan.features.map((f) => (
-                        <li key={f} className="flex items-start gap-2 text-sm">
+                        <li key={f} className="flex items-start gap-2.5 text-sm">
                           <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
                           <span>{f}</span>
                         </li>
                       ))}
                     </ul>
-                    <Button className="w-full" variant={plan.highlighted ? "default" : "outline"} asChild>
+                    <Button
+                      className={`w-full ${plan.highlighted ? "bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-md" : ""}`}
+                      variant={plan.highlighted ? "default" : "outline"}
+                      asChild
+                    >
                       <Link to="/register">{plan.cta}</Link>
                     </Button>
                   </CardContent>
@@ -322,11 +378,17 @@ export default function Landing() {
       </section>
 
       {/* About Us */}
-      <section id="about" className="py-24 px-6 bg-muted/20">
-        <div className="max-w-4xl mx-auto">
+      <section id="about" className="py-28 px-6 bg-muted/20 relative">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-primary/3 blur-[120px]" />
+        </div>
+        <div className="max-w-4xl mx-auto relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">About <span className="gradient-text">InvoiceFlow</span></h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium text-accent mb-4">
+              About Us
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">About <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">InvoiceFlow</span></h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-base">
               We're a team of finance and technology professionals who believe that every business — from solo freelancers to growing enterprises —
               deserves world-class invoicing tools. InvoiceFlow was born from the frustration of clunky billing systems and the vision of making
               cash flow management effortless.
@@ -339,9 +401,9 @@ export default function Landing() {
               { title: "Our Team", desc: "20+ engineers, designers, and finance experts across India building the future of invoicing." },
             ].map((item, i) => (
               <motion.div key={item.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <Card className="h-full glass-card hover:border-primary/30 transition-all">
+                <Card className="h-full border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group">
                   <CardContent className="p-6">
-                    <h3 className="font-semibold mb-2">{item.title}</h3>
+                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
                     <p className="text-sm text-muted-foreground">{item.desc}</p>
                   </CardContent>
                 </Card>
@@ -352,15 +414,18 @@ export default function Landing() {
       </section>
 
       {/* Careers */}
-      <section className="py-24 px-6">
+      <section className="py-28 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Join our <span className="gradient-text">team</span></h2>
-            <p className="text-muted-foreground max-w-xl mx-auto mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-4">
+              Careers
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Join our <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">team</span></h2>
+            <p className="text-muted-foreground max-w-xl mx-auto mb-10 text-base">
               We're always looking for talented people passionate about fintech, AI, and building products that matter.
             </p>
           </motion.div>
-          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
+          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-10">
             {[
               { role: "Full Stack Engineer", location: "Remote, India", type: "Full-time" },
               { role: "Product Designer", location: "Bangalore", type: "Full-time" },
@@ -368,35 +433,40 @@ export default function Landing() {
               { role: "Customer Success", location: "Mumbai", type: "Full-time" },
             ].map((job, i) => (
               <motion.div key={job.role} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <Card className="glass-card hover:border-primary/30 transition-all text-left">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-sm">{job.role}</h4>
-                    <p className="text-xs text-muted-foreground">{job.location} · {job.type}</p>
+                <Card className="border-border/40 bg-card/80 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 text-left group">
+                  <CardContent className="p-5">
+                    <h4 className="font-semibold text-sm group-hover:text-primary transition-colors">{job.role}</h4>
+                    <p className="text-xs text-muted-foreground mt-1">{job.location} · {job.type}</p>
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="border-border/60 hover:border-primary/40" asChild>
             <a href="mailto:careers@invoiceflow.in">Apply Now <ArrowRight className="w-4 h-4 ml-1" /></a>
           </Button>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-6 bg-muted/20">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="py-28 px-6 bg-muted/20 relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/5 blur-[120px]" />
+        </div>
+        <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-            <Clock className="w-10 h-10 text-primary mx-auto mb-6" />
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center mx-auto mb-8">
+              <Clock className="w-8 h-8 text-primary" />
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
               Stop chasing payments.<br />
-              <span className="gradient-text">Start growing your business.</span>
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Start growing your business.</span>
             </h2>
-            <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
+            <p className="text-muted-foreground mb-10 max-w-lg mx-auto text-base">
               Join thousands of businesses that use InvoiceFlow to streamline their billing,
               reduce late payments, and focus on what matters most.
             </p>
-            <Button size="lg" className="text-base px-10" asChild>
+            <Button size="lg" className="text-base px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
                 Get Started — It's Free <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
@@ -406,12 +476,12 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-6 py-12">
+      <footer className="border-t border-border/40 bg-card/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-14">
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                   <FileText className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <span className="font-bold">InvoiceFlow</span>
@@ -447,7 +517,7 @@ export default function Landing() {
               </ul>
             </div>
           </div>
-          <Separator className="mb-6" />
+          <Separator className="mb-6 bg-border/40" />
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
             <p>© {new Date().getFullYear()} InvoiceFlow. All rights reserved.</p>
             <p>Made with precision for businesses that value their time.</p>

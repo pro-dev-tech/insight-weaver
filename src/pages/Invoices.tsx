@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Plus, Search, Send, FileText, Filter, MessageCircle, Mail, Phone, Upload, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
   overdue: "bg-destructive/10 text-destructive border-destructive/20",
   partial: "bg-chart-4/10 text-chart-4 border-chart-4/20",
   cancelled: "bg-muted text-muted-foreground border-border",
+  pending: "bg-chart-4/10 text-chart-4 border-chart-4/20",
 };
 
 export default function Invoices() {
@@ -51,8 +53,8 @@ export default function Invoices() {
   }
 
   const filtered = invoices.filter((inv) => {
-    const matchesSearch = inv.customerName.toLowerCase().includes(search.toLowerCase()) ||
-      inv.invoiceNumber.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = (inv.customerName || "").toLowerCase().includes(search.toLowerCase()) ||
+      (inv.invoiceNumber || "").toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -92,7 +94,7 @@ export default function Invoices() {
     });
     setEditOpen(false);
     setEditInv(null);
-    toast.success("Invoice updated");
+    toast.success("Invoice updated — synced across the system");
   };
 
   const openEdit = (inv: Invoice) => {
@@ -101,19 +103,19 @@ export default function Invoices() {
   };
 
   const handleSendReminder = (inv: Invoice, channel: "whatsapp" | "sms" | "email") => {
-    updateInvoice(inv.id, { remindersSent: inv.remindersSent + 1, lastReminderDate: new Date().toISOString().split("T")[0] });
+    updateInvoice(inv.id, { remindersSent: (inv.remindersSent || 0) + 1, lastReminderDate: new Date().toISOString().split("T")[0] });
     const upiId = localStorage.getItem("payrecovery_upi_id") || "merchant@upi";
-    const companyName = JSON.parse(localStorage.getItem("payrecovery_user") || "{}").companyName || "Our Company";
+    const companyName = (() => { try { return JSON.parse(localStorage.getItem("payrecovery_user") || "{}").companyName || "Our Company"; } catch { return "Our Company"; } })();
 
     if (channel === "whatsapp") {
-      const phone = inv.customerPhone.replace(/[^0-9]/g, "");
+      const phone = (inv.customerPhone || "").replace(/[^0-9]/g, "");
       const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(companyName)}&am=${inv.amount}&cu=INR&tn=Invoice%20${encodeURIComponent(inv.invoiceNumber)}`;
       const payPageUrl = `${window.location.origin}/pay/${inv.id}`;
       const msg = `Dear ${inv.customerName},\n\nYour invoice ${inv.invoiceNumber} of Rs ${inv.amount.toLocaleString("en-IN")} is overdue.\n\nPay instantly here:\n${upiLink}\n\nor scan the QR to pay:\n${payPageUrl}\n\nThank you.\n${companyName}`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
       toast.success(`WhatsApp reminder opened for ${inv.customerName}`);
     } else if (channel === "sms") {
-      const phone = inv.customerPhone.replace(/[^0-9]/g, "");
+      const phone = (inv.customerPhone || "").replace(/[^0-9]/g, "");
       const msg = `Dear ${inv.customerName}, your invoice ${inv.invoiceNumber} of Rs ${inv.amount.toLocaleString("en-IN")} is pending. Please pay at your earliest. - ${companyName}`;
       window.open(`sms:${phone}?body=${encodeURIComponent(msg)}`, "_blank");
       toast.success(`SMS reminder opened for ${inv.customerName}`);
@@ -165,56 +167,63 @@ export default function Invoices() {
             <SelectItem value="unpaid">Unpaid</SelectItem>
             <SelectItem value="overdue">Overdue</SelectItem>
             <SelectItem value="partial">Partial</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
+      {/* Scrollable table with both axes */}
       <Card className="bg-card border-border/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border/50 bg-secondary/30">
-                {["Invoice #", "Customer", "Phone", "Email", "Amount", "Paid", "Due Date", "Status", "Reminders", "Actions"].map((h) => (
-                  <th key={h} className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((inv) => (
-                <tr key={inv.id} className="border-b border-border/30 hover:bg-secondary/20 transition-colors">
-                  <td className="py-2.5 px-3 font-mono text-xs text-foreground flex items-center gap-1.5">
-                    <FileText className="w-3 h-3 text-muted-foreground" />{inv.invoiceNumber}
-                  </td>
-                  <td className="py-2.5 px-3 text-foreground">{inv.customerName}</td>
-                  <td className="py-2.5 px-3 text-xs text-muted-foreground">{inv.customerPhone || "—"}</td>
-                  <td className="py-2.5 px-3 text-xs text-muted-foreground">{inv.customerEmail || "—"}</td>
-                  <td className="py-2.5 px-3 font-mono text-foreground">{formatINR(inv.amount)}</td>
-                  <td className="py-2.5 px-3 font-mono text-foreground">{formatINR(inv.paidAmount)}</td>
-                  <td className="py-2.5 px-3 text-xs text-foreground">{inv.dueDate}</td>
-                  <td className="py-2.5 px-3">
-                    <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[inv.status] || ""}`}>{inv.status}</Badge>
-                  </td>
-                  <td className="py-2.5 px-3 text-xs text-muted-foreground">{inv.remindersSent}</td>
-                  <td className="py-2.5 px-3">
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(inv)}>
-                        <Pencil className="w-3 h-3" />
-                      </Button>
-                      {inv.status !== "paid" && (
-                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setReminderDialog(inv)}>
-                          <Send className="w-3 h-3" /> Remind
-                        </Button>
-                      )}
-                    </div>
-                  </td>
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
+            <table className="w-full text-sm min-w-[1100px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="border-b border-border/50 bg-secondary/50 backdrop-blur-sm">
+                  {["Invoice #", "Customer", "Phone", "Email", "Amount", "Paid", "Due Date", "Status", "Reminders", "Actions"].map((h) => (
+                    <th key={h} className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                  ))}
                 </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={10} className="py-8 text-center text-sm text-muted-foreground">No invoices found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((inv) => (
+                  <tr key={inv.id} className="border-b border-border/30 hover:bg-secondary/20 transition-colors">
+                    <td className="py-2.5 px-3 font-mono text-xs text-foreground whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <FileText className="w-3 h-3 text-muted-foreground" />{inv.invoiceNumber}
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3 text-foreground whitespace-nowrap">{inv.customerName || "—"}</td>
+                    <td className="py-2.5 px-3 text-xs text-muted-foreground whitespace-nowrap">{inv.customerPhone || "—"}</td>
+                    <td className="py-2.5 px-3 text-xs text-muted-foreground whitespace-nowrap max-w-[200px] truncate">{inv.customerEmail || "—"}</td>
+                    <td className="py-2.5 px-3 font-mono text-foreground whitespace-nowrap">{formatINR(inv.amount)}</td>
+                    <td className="py-2.5 px-3 font-mono text-foreground whitespace-nowrap">{formatINR(inv.paidAmount || 0)}</td>
+                    <td className="py-2.5 px-3 text-xs text-foreground whitespace-nowrap">{inv.dueDate || "—"}</td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[inv.status] || ""}`}>{inv.status}</Badge>
+                    </td>
+                    <td className="py-2.5 px-3 text-xs text-muted-foreground whitespace-nowrap">{inv.remindersSent || 0}</td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(inv)}>
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        {inv.status !== "paid" && (
+                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setReminderDialog(inv)}>
+                            <Send className="w-3 h-3" /> Remind
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={10} className="py-8 text-center text-sm text-muted-foreground">No invoices found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </Card>
 
       {/* Edit Dialog */}
@@ -223,12 +232,12 @@ export default function Invoices() {
           <DialogHeader><DialogTitle>Edit Invoice</DialogTitle></DialogHeader>
           {editInv && (
             <div className="grid grid-cols-2 gap-3 mt-2">
-              <div className="space-y-1"><Label className="text-xs">Customer Name</Label><Input value={editInv.customerName} onChange={(e) => setEditInv({ ...editInv, customerName: e.target.value })} /></div>
+              <div className="space-y-1"><Label className="text-xs">Customer Name</Label><Input value={editInv.customerName || ""} onChange={(e) => setEditInv({ ...editInv, customerName: e.target.value })} /></div>
               <div className="space-y-1"><Label className="text-xs">Invoice #</Label><Input value={editInv.invoiceNumber} onChange={(e) => setEditInv({ ...editInv, invoiceNumber: e.target.value })} /></div>
-              <div className="space-y-1"><Label className="text-xs">Email</Label><Input value={editInv.customerEmail} onChange={(e) => setEditInv({ ...editInv, customerEmail: e.target.value })} /></div>
-              <div className="space-y-1"><Label className="text-xs">Phone</Label><Input value={editInv.customerPhone} onChange={(e) => setEditInv({ ...editInv, customerPhone: e.target.value })} /></div>
+              <div className="space-y-1"><Label className="text-xs">Email</Label><Input value={editInv.customerEmail || ""} onChange={(e) => setEditInv({ ...editInv, customerEmail: e.target.value })} /></div>
+              <div className="space-y-1"><Label className="text-xs">Phone</Label><Input value={editInv.customerPhone || ""} onChange={(e) => setEditInv({ ...editInv, customerPhone: e.target.value })} /></div>
               <div className="space-y-1"><Label className="text-xs">Amount (₹)</Label><Input type="number" value={editInv.amount} onChange={(e) => setEditInv({ ...editInv, amount: parseFloat(e.target.value) || 0 })} /></div>
-              <div className="space-y-1"><Label className="text-xs">Paid Amount (₹)</Label><Input type="number" value={editInv.paidAmount} onChange={(e) => setEditInv({ ...editInv, paidAmount: parseFloat(e.target.value) || 0 })} /></div>
+              <div className="space-y-1"><Label className="text-xs">Paid Amount (₹)</Label><Input type="number" value={editInv.paidAmount || 0} onChange={(e) => setEditInv({ ...editInv, paidAmount: parseFloat(e.target.value) || 0 })} /></div>
               <div className="space-y-1"><Label className="text-xs">Due Date</Label><Input type="date" value={editInv.dueDate} onChange={(e) => setEditInv({ ...editInv, dueDate: e.target.value })} /></div>
               <div className="space-y-1"><Label className="text-xs">Status</Label>
                 <Select value={editInv.status} onValueChange={(v: any) => setEditInv({ ...editInv, status: v })}>
@@ -238,12 +247,14 @@ export default function Invoices() {
                     <SelectItem value="unpaid">Unpaid</SelectItem>
                     <SelectItem value="overdue">Overdue</SelectItem>
                     <SelectItem value="partial">Partial</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           )}
+          <p className="text-[10px] text-muted-foreground mt-1">Changes are saved to the database and reflected across the entire system (dashboard, customers, analytics).</p>
           <Button onClick={handleEditInvoice} className="w-full mt-3">Save Changes</Button>
         </DialogContent>
       </Dialog>
@@ -257,16 +268,16 @@ export default function Invoices() {
             {reminderDialog?.customerPhone && (
               <>
                 <Button variant="outline" className="gap-2 justify-start" onClick={() => reminderDialog && handleSendReminder(reminderDialog, "whatsapp")}>
-                  <MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp (with UPI link & QR)
+                  <MessageCircle className="w-4 h-4 text-accent" /> WhatsApp (with UPI link & QR)
                 </Button>
                 <Button variant="outline" className="gap-2 justify-start" onClick={() => reminderDialog && handleSendReminder(reminderDialog, "sms")}>
-                  <Phone className="w-4 h-4 text-blue-500" /> SMS
+                  <Phone className="w-4 h-4 text-primary" /> SMS
                 </Button>
               </>
             )}
             {reminderDialog?.customerEmail && (
               <Button variant="outline" className="gap-2 justify-start" onClick={() => reminderDialog && handleSendReminder(reminderDialog, "email")}>
-                <Mail className="w-4 h-4 text-orange-500" /> Email
+                <Mail className="w-4 h-4 text-chart-4" /> Email
               </Button>
             )}
             {!reminderDialog?.customerPhone && !reminderDialog?.customerEmail && (

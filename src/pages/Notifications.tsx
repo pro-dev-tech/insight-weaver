@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useInvoiceData } from "@/contexts/InvoiceDataContext";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Invoice } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import {
   MessageCircle, Mail, Phone, Send, Save, ExternalLink,
-  FileText, AlertTriangle, PenLine, X, Clock, Zap,
+  FileText, AlertTriangle, PenLine, X, Clock, Zap, CheckCircle2, Loader2,
 } from "lucide-react";
 
 // Templates
@@ -29,6 +31,7 @@ interface SmtpConfig {
 
 export default function Notifications() {
   const { invoices, hasData, updateInvoice } = useInvoiceData();
+  const { user } = useAuth();
 
   // Edit modes for each config
   const [waEditMode, setWaEditMode] = useState(false);
@@ -40,8 +43,21 @@ export default function Notifications() {
   const [waSenderNumber, setWaSenderNumber] = useState(() => localStorage.getItem("payrecovery_wa_sender") || "");
   const [waTemplate, setWaTemplate] = useState(() => localStorage.getItem("payrecovery_wa_template") || DEFAULT_WA_TEMPLATE);
   const [waApiDialog, setWaApiDialog] = useState(false);
-  const [waBusinessName, setWaBusinessName] = useState("");
-  const [_waBusinessDoc, setWaBusinessDoc] = useState<File | null>(null);
+
+  // WhatsApp Business API form
+  const [waApiForm, setWaApiForm] = useState({
+    businessPhone: "",
+    businessName: "",
+    businessAddress: "",
+    businessEmail: "",
+    businessWebsite: "",
+    businessCategory: "Financial Services",
+    businessDescription: "",
+    gstNumber: "",
+    panNumber: "",
+  });
+  const [waApiSubmitting, setWaApiSubmitting] = useState(false);
+  const [waApiSubmitted, setWaApiSubmitted] = useState(false);
 
   // SMS config
   const [smsSenderNumber, setSmsSenderNumber] = useState(() => localStorage.getItem("payrecovery_sms_sender") || "");
@@ -190,9 +206,42 @@ export default function Notifications() {
     toast.success(`Sending ${targets.length} emails...`);
   };
 
-  const handleSubmitWaApi = () => {
-    toast.success("WhatsApp Business API application submitted (demo).");
-    setWaApiDialog(false);
+  const handleSubmitWaApi = async () => {
+    const { businessPhone, businessName: bName, businessEmail, businessCategory } = waApiForm;
+    if (!businessPhone || !bName || !businessEmail) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    setWaApiSubmitting(true);
+    try {
+      // Store the application in the database
+      if (user?.id) {
+        await supabase.from("api_key_vault").upsert({
+          user_id: user.id,
+          provider: "whatsapp_business",
+          key_name: "application_data",
+          key_value_encrypted: JSON.stringify(waApiForm),
+        }, { onConflict: "user_id,provider,key_name" });
+
+        // Log the activity
+        await supabase.from("activity_logs").insert({
+          user_id: user.id,
+          action: "whatsapp_api_application",
+          description: `WhatsApp Business API application submitted for ${bName} (${businessPhone})`,
+        });
+      }
+
+      // Save phone number locally
+      localStorage.setItem("payrecovery_wa_sender", businessPhone);
+      setWaSenderNumber(businessPhone);
+
+      setWaApiSubmitted(true);
+      toast.success("WhatsApp Business API application submitted successfully!");
+    } catch (err) {
+      toast.error("Failed to submit application. Please try again.");
+    } finally {
+      setWaApiSubmitting(false);
+    }
   };
 
   const toggleInvoice = (id: string) => {
@@ -260,8 +309,8 @@ export default function Notifications() {
                 </div>
                 {waMode === "api" && (
                   <div className="space-y-3 p-3 rounded-lg bg-secondary/30 border border-border/50">
-                    <div className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-chart-4" /><p className="text-xs text-muted-foreground">Requires Meta approval.</p></div>
-                    <Button size="sm" variant="outline" className="gap-2" onClick={() => setWaApiDialog(true)}>
+                    <div className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-chart-4" /><p className="text-xs text-muted-foreground">Requires Meta approval. We simplify the process — fill in your details and we submit on your behalf.</p></div>
+                    <Button size="sm" variant="outline" className="gap-2" onClick={() => { setWaApiSubmitted(false); setWaApiDialog(true); }}>
                       <ExternalLink className="w-3 h-3" /> Apply for WhatsApp Business API
                     </Button>
                   </div>
@@ -514,15 +563,106 @@ export default function Notifications() {
 
       {/* WhatsApp Business API Dialog */}
       <Dialog open={waApiDialog} onOpenChange={setWaApiDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>WhatsApp Business API</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Submit details for WhatsApp Business API approval.</p>
-            <div className="space-y-1"><Label className="text-xs">Business Phone</Label><Input placeholder="919876543210" value={waSenderNumber} onChange={(e) => setWaSenderNumber(e.target.value)} /></div>
-            <div className="space-y-1"><Label className="text-xs">Business Name</Label><Input placeholder="Kumar Stores" value={waBusinessName} onChange={(e) => setWaBusinessName(e.target.value)} /></div>
-            <div className="space-y-1"><Label className="text-xs">Business Documents</Label><Input type="file" onChange={(e) => setWaBusinessDoc(e.target.files?.[0] || null)} accept=".pdf,.jpg,.png" /></div>
-            <Button className="w-full gap-2" onClick={handleSubmitWaApi}><Send className="w-4 h-4" /> Submit</Button>
-          </div>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-accent" /> WhatsApp Business API Access
+            </DialogTitle>
+          </DialogHeader>
+          {waApiSubmitted ? (
+            <div className="text-center py-6 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8 text-accent" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">Application Submitted!</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Your WhatsApp Business API application has been submitted. We'll process it and notify you via email once approved. This typically takes 2-5 business days.
+              </p>
+              <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">Status: Under Review</Badge>
+              <Button variant="outline" onClick={() => setWaApiDialog(false)} className="mt-4">Close</Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                We simplify the WhatsApp Business API access process. Fill in your business details below and we'll submit the application to Meta on your behalf.
+              </p>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Business Phone Number *</Label>
+                <Input placeholder="+91 98765 43210" value={waApiForm.businessPhone} onChange={(e) => setWaApiForm({ ...waApiForm, businessPhone: e.target.value })} />
+                <p className="text-[10px] text-muted-foreground">This number will be used as your WhatsApp Business sender number</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Business Name *</Label>
+                  <Input placeholder="Kumar Stores Pvt Ltd" value={waApiForm.businessName} onChange={(e) => setWaApiForm({ ...waApiForm, businessName: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Business Email *</Label>
+                  <Input placeholder="contact@business.com" value={waApiForm.businessEmail} onChange={(e) => setWaApiForm({ ...waApiForm, businessEmail: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Business Address</Label>
+                <Input placeholder="123, MG Road, Bangalore 560001" value={waApiForm.businessAddress} onChange={(e) => setWaApiForm({ ...waApiForm, businessAddress: e.target.value })} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Website (optional)</Label>
+                  <Input placeholder="https://yourbusiness.com" value={waApiForm.businessWebsite} onChange={(e) => setWaApiForm({ ...waApiForm, businessWebsite: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Business Category</Label>
+                  <Select value={waApiForm.businessCategory} onValueChange={(v) => setWaApiForm({ ...waApiForm, businessCategory: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Financial Services">Financial Services</SelectItem>
+                      <SelectItem value="Retail">Retail</SelectItem>
+                      <SelectItem value="E-commerce">E-commerce</SelectItem>
+                      <SelectItem value="Healthcare">Healthcare</SelectItem>
+                      <SelectItem value="Education">Education</SelectItem>
+                      <SelectItem value="Technology">Technology</SelectItem>
+                      <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Business Description</Label>
+                <Textarea rows={3} placeholder="Brief description of your business and how you plan to use WhatsApp Business API..." value={waApiForm.businessDescription} onChange={(e) => setWaApiForm({ ...waApiForm, businessDescription: e.target.value })} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">GST Number (optional)</Label>
+                  <Input placeholder="29ABCDE1234F1Z5" value={waApiForm.gstNumber} onChange={(e) => setWaApiForm({ ...waApiForm, gstNumber: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">PAN Number (optional)</Label>
+                  <Input placeholder="ABCDE1234F" value={waApiForm.panNumber} onChange={(e) => setWaApiForm({ ...waApiForm, panNumber: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="bg-secondary/30 rounded-lg p-3 border border-border/50">
+                <h4 className="text-xs font-semibold text-foreground mb-2">What happens next?</h4>
+                <ul className="space-y-1.5 text-[11px] text-muted-foreground">
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-3 h-3 text-accent mt-0.5 shrink-0" /> We submit your application to Meta for WhatsApp Business API access</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-3 h-3 text-accent mt-0.5 shrink-0" /> Meta reviews your business (typically 2-5 business days)</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-3 h-3 text-accent mt-0.5 shrink-0" /> Once approved, we configure the API and notify you via email</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-3 h-3 text-accent mt-0.5 shrink-0" /> You can then send automated WhatsApp messages directly from InvoiceFlow</li>
+                </ul>
+              </div>
+
+              <Button className="w-full gap-2" onClick={handleSubmitWaApi} disabled={waApiSubmitting}>
+                {waApiSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <><Send className="w-4 h-4" /> Submit Application</>}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

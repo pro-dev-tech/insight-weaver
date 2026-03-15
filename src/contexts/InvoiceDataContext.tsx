@@ -268,11 +268,28 @@ export function InvoiceDataProvider({ children }: { children: ReactNode }) {
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.paymentLink !== undefined) dbUpdates.payment_link = updates.paymentLink;
     if (updates.upiId !== undefined) dbUpdates.upi_id = updates.upiId;
+    if (updates.paidAmount !== undefined) dbUpdates.paid_amount = updates.paidAmount;
+    if (updates.remindersSent !== undefined) dbUpdates.reminders_sent = updates.remindersSent;
+    if (updates.lastReminderDate !== undefined) dbUpdates.last_reminder_date = updates.lastReminderDate;
     dbUpdates.updated_at = new Date().toISOString();
 
     await supabase.from("invoices").update(dbUpdates).eq("id", id);
+
+    // If customer details changed, update the customer record too
+    if (updates.customerName || updates.customerPhone || updates.customerEmail) {
+      const invoice = invoices.find(i => i.id === id);
+      if (invoice?.customerId) {
+        const custUpdates: any = {};
+        if (updates.customerName) custUpdates.name = updates.customerName;
+        if (updates.customerPhone) custUpdates.phone = updates.customerPhone;
+        if (updates.customerEmail) custUpdates.email = updates.customerEmail;
+        custUpdates.updated_at = new Date().toISOString();
+        await supabase.from("customers").update(custUpdates).eq("id", invoice.customerId);
+      }
+    }
+
     await fetchData();
-  }, [fetchData]);
+  }, [fetchData, invoices]);
 
   const deleteDataset = useCallback(async () => {
     if (!userId) return;
