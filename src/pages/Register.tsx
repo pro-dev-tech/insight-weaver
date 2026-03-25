@@ -144,7 +144,7 @@ export default function Register() {
               </div>
               <div className="space-y-2">
                 <Label>Company Name *</Label>
-                <Input placeholder="Kumar Enterprises" value={form.companyName} onChange={(e) => update("companyName", e.target.value)} className="h-11" />
+                <Input placeholder="Your company name" value={form.companyName} onChange={(e) => update("companyName", e.target.value)} className="h-11" />
               </div>
               <div className="space-y-2">
                 <Label>Company Location *</Label>
