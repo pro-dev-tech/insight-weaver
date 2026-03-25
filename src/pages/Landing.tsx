@@ -361,7 +361,7 @@ export default function Landing() {
                       </span>
                     </div>
                   )}
-                  <CardContent className="p-8">
+                  <CardContent className="p-8 flex flex-col h-full">
                     <h3 className="font-semibold text-lg">{plan.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
                     <div className="my-7">
