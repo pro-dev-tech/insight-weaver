@@ -53,35 +53,28 @@ const pricingPlans = [
   },
 ];
 
-// Marquee component for features
+// Marquee component for features — pure CSS for glitch-free infinite loop
 function FeatureMarquee() {
-  const marqueeItems = [...features, ...features];
+  const renderCard = (f: typeof features[0], i: number) => (
+    <div key={`${f.title}-${i}`} className="flex-shrink-0 w-72 hover:scale-105 hover:-translate-y-2 transition-transform duration-300">
+      <Card className="h-full border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group cursor-pointer">
+        <CardContent className="p-6">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center mb-4 group-hover:from-primary/25 group-hover:to-accent/25 group-hover:scale-110 transition-all duration-300">
+            <f.icon className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="font-semibold text-sm mb-2 text-foreground">{f.title}</h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
     <div className="overflow-hidden py-4">
-      <motion.div
-        className="flex gap-6"
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
-      >
-        {marqueeItems.map((f, i) => (
-          <motion.div
-            key={`${f.title}-${i}`}
-            className="flex-shrink-0 w-72"
-            whileHover={{ scale: 1.07, y: -10, rotateZ: 1 }}
-            transition={{ type: "spring", stiffness: 400, damping: 15 }}
-          >
-            <Card className="h-full border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group cursor-pointer">
-              <CardContent className="p-6">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center mb-4 group-hover:from-primary/25 group-hover:to-accent/25 group-hover:scale-110 transition-all duration-300">
-                  <f.icon className="w-5 h-5 text-primary" />
-                </div>
-                <h3 className="font-semibold text-sm mb-2 text-foreground">{f.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </motion.div>
+      <div className="flex gap-6 animate-marquee-scroll">
+        {features.map((f, i) => renderCard(f, i))}
+        {features.map((f, i) => renderCard(f, i + features.length))}
+      </div>
     </div>
   );
 }
