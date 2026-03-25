@@ -368,7 +368,7 @@ export default function Landing() {
                       <span className="text-4xl font-bold font-mono">{plan.price}</span>
                       <span className="text-muted-foreground text-sm">{plan.period}</span>
                     </div>
-                    <ul className="space-y-3 mb-8">
+                    <ul className="space-y-3 mb-8 flex-1">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-sm">
                           <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
