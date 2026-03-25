@@ -3,11 +3,11 @@ import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    // Start in light mode
-    document.documentElement.classList.remove("dark");
+    // Start in dark mode for Supabase-inspired feel
+    document.documentElement.classList.add("dark");
   }, []);
 
   const toggle = () => {
