@@ -61,7 +61,7 @@ function FeatureMarquee() {
       <motion.div
         className="flex gap-6"
         animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
       >
         {marqueeItems.map((f, i) => (
           <motion.div
