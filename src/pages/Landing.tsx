@@ -61,7 +61,7 @@ function FeatureMarquee() {
       <motion.div
         className="flex gap-6"
         animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
       >
         {marqueeItems.map((f, i) => (
           <motion.div
@@ -111,15 +111,29 @@ function ScrollProgressBar() {
 
 // Fast striking lines effect
 function StrikingLines() {
+  const lines = [
+    { top: "5%", width: "160px", duration: 0.4, delay: 0, opacity: 0.6 },
+    { top: "15%", width: "200px", duration: 0.35, delay: 0.2, opacity: 0.5 },
+    { top: "25%", width: "140px", duration: 0.5, delay: 0.4, opacity: 0.45 },
+    { top: "38%", width: "180px", duration: 0.3, delay: 0.1, opacity: 0.55 },
+    { top: "50%", width: "220px", duration: 0.45, delay: 0.35, opacity: 0.5 },
+    { top: "62%", width: "130px", duration: 0.38, delay: 0.55, opacity: 0.4 },
+    { top: "72%", width: "190px", duration: 0.42, delay: 0.15, opacity: 0.55 },
+    { top: "82%", width: "150px", duration: 0.36, delay: 0.45, opacity: 0.5 },
+    { top: "90%", width: "170px", duration: 0.48, delay: 0.25, opacity: 0.45 },
+    { top: "95%", width: "210px", duration: 0.32, delay: 0.6, opacity: 0.4 },
+    { top: "10%", width: "100px", duration: 0.28, delay: 0.7, opacity: 0.35 },
+    { top: "45%", width: "240px", duration: 0.33, delay: 0.5, opacity: 0.3 },
+  ];
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(5)].map((_, i) => (
+      {lines.map((l, i) => (
         <motion.div
           key={i}
-          className="absolute h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"
-          style={{ top: `${20 + i * 15}%`, width: "120px" }}
-          animate={{ x: [800, -200], opacity: [0, 1, 1, 0] }}
-          transition={{ duration: 0.8 + i * 0.15, repeat: Infinity, repeatDelay: 1 + i * 0.3, ease: "easeOut" }}
+          className="absolute h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent"
+          style={{ top: l.top, width: l.width, opacity: l.opacity }}
+          animate={{ x: [600, -300] }}
+          transition={{ duration: l.duration, repeat: Infinity, repeatDelay: 0.6 + l.delay, ease: "easeOut" }}
         />
       ))}
     </div>
@@ -347,14 +361,14 @@ export default function Landing() {
                       </span>
                     </div>
                   )}
-                  <CardContent className="p-8">
+                  <CardContent className="p-8 flex flex-col h-full">
                     <h3 className="font-semibold text-lg">{plan.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
                     <div className="my-7">
                       <span className="text-4xl font-bold font-mono">{plan.price}</span>
                       <span className="text-muted-foreground text-sm">{plan.period}</span>
                     </div>
-                    <ul className="space-y-3 mb-8">
+                    <ul className="space-y-3 mb-8 flex-1">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-sm">
                           <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
