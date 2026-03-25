@@ -128,7 +128,7 @@ export default function Register() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Full Name *</Label>
-                <Input placeholder="Rajesh Kumar" value={form.name} onChange={(e) => update("name", e.target.value)} className="h-11" />
+                <Input placeholder="Your name" value={form.name} onChange={(e) => update("name", e.target.value)} className="h-11" />
               </div>
               <div className="space-y-2">
                 <Label>Email *</Label>
