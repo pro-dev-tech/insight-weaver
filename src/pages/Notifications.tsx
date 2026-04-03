@@ -45,22 +45,8 @@ export default function Notifications() {
   const [waMode, setWaMode] = useState<"link" | "api">(() => localStorage.getItem("payrecovery_wa_mode") as any || "link");
   const [waSenderNumber, setWaSenderNumber] = useState(() => localStorage.getItem("payrecovery_wa_sender") || "");
   const [waTemplate, setWaTemplate] = useState(() => localStorage.getItem("payrecovery_wa_template") || DEFAULT_WA_TEMPLATE);
-  const [waApiDialog, setWaApiDialog] = useState(false);
-
-  // WhatsApp Business API form
-  const [waApiForm, setWaApiForm] = useState({
-    businessPhone: "",
-    businessName: "",
-    businessAddress: "",
-    businessEmail: "",
-    businessWebsite: "",
-    businessCategory: "Financial Services",
-    businessDescription: "",
-    gstNumber: "",
-    panNumber: "",
-  });
-  const [waApiSubmitting, setWaApiSubmitting] = useState(false);
-  const [waApiSubmitted, setWaApiSubmitted] = useState(false);
+  const [showWaWizard, setShowWaWizard] = useState(false);
+  const [waApiConfigured, setWaApiConfigured] = useState(() => !!localStorage.getItem("payrecovery_wa_api_key"));
 
   // SMS config
   const [smsSenderNumber, setSmsSenderNumber] = useState(() => localStorage.getItem("payrecovery_sms_sender") || "");
