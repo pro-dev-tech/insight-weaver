@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInvoiceData } from "@/contexts/InvoiceDataContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAutomationScheduler } from "@/hooks/useAutomationScheduler";
 import type { Invoice } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
