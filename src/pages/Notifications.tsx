@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import WhatsAppApiWizard from "@/components/WhatsAppApiWizard";
 import {
   MessageCircle, Mail, Phone, Send, Save, ExternalLink,
   FileText, AlertTriangle, PenLine, X, Clock, Zap, CheckCircle2, Loader2,
