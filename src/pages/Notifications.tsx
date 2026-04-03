@@ -608,7 +608,6 @@ export default function Notifications() {
               </p>
             )}
           </div>
-          </div>
         )}
       </Card>
 
