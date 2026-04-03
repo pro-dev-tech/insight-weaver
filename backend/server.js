@@ -8,6 +8,7 @@ const aiRoutes = require("./routes/ai");
 const settingsRoutes = require("./routes/settings");
 const emailRoutes = require("./routes/email");
 const gsheetRoutes = require("./routes/gsheet");
+const whatsappRoutes = require("./routes/whatsapp");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
