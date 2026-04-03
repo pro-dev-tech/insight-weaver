@@ -33,6 +33,7 @@ interface SmtpConfig {
 export default function Notifications() {
   const { invoices, hasData, updateInvoice } = useInvoiceData();
   const { user } = useAuth();
+  const { runAutomation } = useAutomationScheduler();
 
   // Edit modes for each config
   const [waEditMode, setWaEditMode] = useState(false);
