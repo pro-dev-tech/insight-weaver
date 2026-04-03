@@ -78,7 +78,9 @@ export default function Notifications() {
   const [autoTime, setAutoTime] = useState(() => localStorage.getItem("payrecovery_auto_time") || "09:00");
   const [autoChannel, setAutoChannel] = useState(() => localStorage.getItem("payrecovery_auto_channel") || "email");
   const [autoEscalation, setAutoEscalation] = useState(() => localStorage.getItem("payrecovery_auto_escalation") === "true");
+  const [autoEnabled, setAutoEnabled] = useState(() => localStorage.getItem("payrecovery_auto_enabled") === "true");
   const [autoEditMode, setAutoEditMode] = useState(false);
+  const [autoRunning, setAutoRunning] = useState(false);
 
   // Send targets
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
