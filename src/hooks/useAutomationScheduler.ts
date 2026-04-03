@@ -190,7 +190,7 @@ export function useAutomationScheduler() {
             success = await sendEmailSmtp(inv, businessName);
             if (success) emailSent++;
           } else if (ch === "whatsapp" && inv.customerPhone) {
-            success = sendWhatsApp(inv, businessName);
+            success = await sendWhatsApp(inv, businessName);
             if (success) waSent++;
           } else if (ch === "sms" && inv.customerPhone) {
             success = sendSms(inv, businessName);
