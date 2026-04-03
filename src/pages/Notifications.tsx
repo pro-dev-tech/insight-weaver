@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInvoiceData } from "@/contexts/InvoiceDataContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAutomationScheduler } from "@/hooks/useAutomationScheduler";
 import type { Invoice } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ interface SmtpConfig {
 export default function Notifications() {
   const { invoices, hasData, updateInvoice } = useInvoiceData();
   const { user } = useAuth();
+  const { runAutomation } = useAutomationScheduler();
 
   // Edit modes for each config
   const [waEditMode, setWaEditMode] = useState(false);
@@ -76,7 +78,9 @@ export default function Notifications() {
   const [autoTime, setAutoTime] = useState(() => localStorage.getItem("payrecovery_auto_time") || "09:00");
   const [autoChannel, setAutoChannel] = useState(() => localStorage.getItem("payrecovery_auto_channel") || "email");
   const [autoEscalation, setAutoEscalation] = useState(() => localStorage.getItem("payrecovery_auto_escalation") === "true");
+  const [autoEnabled, setAutoEnabled] = useState(() => localStorage.getItem("payrecovery_auto_enabled") === "true");
   const [autoEditMode, setAutoEditMode] = useState(false);
+  const [autoRunning, setAutoRunning] = useState(false);
 
   // Send targets
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
@@ -253,8 +257,18 @@ export default function Notifications() {
     localStorage.setItem("payrecovery_auto_time", autoTime);
     localStorage.setItem("payrecovery_auto_channel", autoChannel);
     localStorage.setItem("payrecovery_auto_escalation", String(autoEscalation));
-    toast.success("Automation settings saved");
+    localStorage.setItem("payrecovery_auto_enabled", String(autoEnabled));
+    toast.success("Automation settings saved" + (autoEnabled ? " — scheduler is active" : ""));
     setAutoEditMode(false);
+  };
+
+  const handleRunNow = async () => {
+    setAutoRunning(true);
+    try {
+      await runAutomation();
+    } finally {
+      setAutoRunning(false);
+    }
   };
 
   if (!hasData) {
@@ -494,15 +508,32 @@ export default function Notifications() {
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-semibold text-foreground">Automation Settings</h3>
+            <Badge variant={autoEnabled ? "default" : "outline"} className={autoEnabled ? "bg-accent/20 text-accent border-accent/30 text-[10px]" : "text-[10px]"}>
+              {autoEnabled ? "Active" : "Inactive"}
+            </Badge>
           </div>
-          {!autoEditMode ? (
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => setAutoEditMode(true)}><PenLine className="w-3 h-3" /> Edit</Button>
-          ) : (
-            <Button size="sm" variant="ghost" onClick={() => setAutoEditMode(false)}><X className="w-3 h-3" /></Button>
-          )}
+          <div className="flex items-center gap-2">
+            {!autoEditMode && (
+              <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleRunNow} disabled={autoRunning || unpaidInvoices.length === 0}>
+                {autoRunning ? <><Loader2 className="w-3 h-3 animate-spin" /> Running...</> : <><Send className="w-3 h-3" /> Run Now</>}
+              </Button>
+            )}
+            {!autoEditMode ? (
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => setAutoEditMode(true)}><PenLine className="w-3 h-3" /> Edit</Button>
+            ) : (
+              <Button size="sm" variant="ghost" onClick={() => setAutoEditMode(false)}><X className="w-3 h-3" /></Button>
+            )}
+          </div>
         </div>
         {autoEditMode ? (
           <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-border/50">
+              <Switch checked={autoEnabled} onCheckedChange={setAutoEnabled} />
+              <div>
+                <Label className="text-xs font-semibold">Enable Automatic Sending</Label>
+                <p className="text-[10px] text-muted-foreground">When enabled, notifications will be sent automatically at the scheduled time</p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Frequency</Label>
@@ -525,10 +556,10 @@ export default function Notifications() {
                 <Select value={autoChannel} onValueChange={setAutoChannel}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
-                    <SelectItem value="multi">Multi-channel</SelectItem>
+                    <SelectItem value="email">Email (via SMTP)</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp (wa.me link)</SelectItem>
+                    <SelectItem value="sms">SMS (sms: link)</SelectItem>
+                    <SelectItem value="multi">Multi-channel (All)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -537,26 +568,45 @@ export default function Notifications() {
                 <Label className="text-xs">Auto-escalation (increase urgency)</Label>
               </div>
             </div>
+            <div className="p-3 rounded-lg bg-secondary/20 border border-border/30 text-[11px] text-muted-foreground space-y-1">
+              <p className="font-semibold text-foreground text-xs">How it works:</p>
+              <p>• <strong>Email:</strong> Sent via your configured SMTP server directly to customer emails</p>
+              <p>• <strong>WhatsApp:</strong> Opens wa.me pre-filled chat links (no API needed)</p>
+              <p>• <strong>SMS:</strong> Opens device SMS app with pre-filled message</p>
+              <p>• <strong>Multi-channel:</strong> Sends via all channels simultaneously</p>
+              <p className="text-primary font-medium mt-1">Keep the app open at the scheduled time for automated sends.</p>
+            </div>
             <Button size="sm" className="gap-2" onClick={handleSaveAutomation}><Save className="w-4 h-4" /> Save Automation</Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div className="bg-secondary/30 rounded-lg p-2.5">
-              <p className="text-muted-foreground text-[10px]">Frequency</p>
-              <p className="font-semibold text-foreground capitalize">{autoFrequency}</p>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+              <div className="bg-secondary/30 rounded-lg p-2.5">
+                <p className="text-muted-foreground text-[10px]">Status</p>
+                <p className={`font-semibold ${autoEnabled ? "text-accent" : "text-muted-foreground"}`}>{autoEnabled ? "Enabled" : "Disabled"}</p>
+              </div>
+              <div className="bg-secondary/30 rounded-lg p-2.5">
+                <p className="text-muted-foreground text-[10px]">Frequency</p>
+                <p className="font-semibold text-foreground capitalize">{autoFrequency}</p>
+              </div>
+              <div className="bg-secondary/30 rounded-lg p-2.5">
+                <p className="text-muted-foreground text-[10px]">Time</p>
+                <p className="font-semibold text-foreground">{autoTime}</p>
+              </div>
+              <div className="bg-secondary/30 rounded-lg p-2.5">
+                <p className="text-muted-foreground text-[10px]">Channel</p>
+                <p className="font-semibold text-foreground capitalize">{autoChannel}</p>
+              </div>
+              <div className="bg-secondary/30 rounded-lg p-2.5">
+                <p className="text-muted-foreground text-[10px]">Escalation</p>
+                <p className="font-semibold text-foreground">{autoEscalation ? "Enabled" : "Disabled"}</p>
+              </div>
             </div>
-            <div className="bg-secondary/30 rounded-lg p-2.5">
-              <p className="text-muted-foreground text-[10px]">Time</p>
-              <p className="font-semibold text-foreground">{autoTime}</p>
-            </div>
-            <div className="bg-secondary/30 rounded-lg p-2.5">
-              <p className="text-muted-foreground text-[10px]">Channel</p>
-              <p className="font-semibold text-foreground capitalize">{autoChannel}</p>
-            </div>
-            <div className="bg-secondary/30 rounded-lg p-2.5">
-              <p className="text-muted-foreground text-[10px]">Escalation</p>
-              <p className="font-semibold text-foreground">{autoEscalation ? "Enabled" : "Disabled"}</p>
-            </div>
+            {localStorage.getItem("payrecovery_auto_last_run") && (
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Last run: {new Date(localStorage.getItem("payrecovery_auto_last_run")!).toLocaleString()}
+              </p>
+            )}
           </div>
         )}
       </Card>
