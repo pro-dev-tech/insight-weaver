@@ -257,8 +257,18 @@ export default function Notifications() {
     localStorage.setItem("payrecovery_auto_time", autoTime);
     localStorage.setItem("payrecovery_auto_channel", autoChannel);
     localStorage.setItem("payrecovery_auto_escalation", String(autoEscalation));
-    toast.success("Automation settings saved");
+    localStorage.setItem("payrecovery_auto_enabled", String(autoEnabled));
+    toast.success("Automation settings saved" + (autoEnabled ? " — scheduler is active" : ""));
     setAutoEditMode(false);
+  };
+
+  const handleRunNow = async () => {
+    setAutoRunning(true);
+    try {
+      await runAutomation();
+    } finally {
+      setAutoRunning(false);
+    }
   };
 
   if (!hasData) {
