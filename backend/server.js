@@ -29,6 +29,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/gsheet", gsheetRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
 
 // Health check
 app.get("/health", (req, res) => res.json({
