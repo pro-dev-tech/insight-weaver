@@ -124,12 +124,31 @@ export function useAutomationScheduler() {
     }
   }, []);
 
-  const sendWhatsApp = useCallback((inv: Invoice, businessName: string) => {
+  const sendWhatsApp = useCallback(async (inv: Invoice, businessName: string) => {
     const phone = (inv.customerPhone || "").replace(/[^0-9]/g, "");
     if (!phone) return false;
     const waTemplate = localStorage.getItem("payrecovery_wa_template") ||
       `Dear {{name}},\n\nYour invoice {{invoiceNumber}} of Rs {{amount}} is overdue.\n\nPay instantly here:\n{{upiLink}}\n\nor scan the QR to pay:\n{{payLink}}\n\nThank you.\n{{businessName}}`;
     const msg = fillTemplate(waTemplate, inv, businessName);
+
+    // Try API first if configured
+    const waApiKey = localStorage.getItem("payrecovery_wa_api_key");
+    const waPhoneId = localStorage.getItem("payrecovery_wa_phone_id");
+    if (waApiKey && waPhoneId) {
+      try {
+        const res = await fetch("http://localhost:3001/api/whatsapp/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: phone, message: msg, apiKey: waApiKey, phoneNumberId: waPhoneId }),
+        });
+        const data = await res.json();
+        if (data.success) return true;
+      } catch {
+        // Fall through to link method
+      }
+    }
+
+    // Fallback to wa.me link
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
     return true;
   }, []);
@@ -171,7 +190,7 @@ export function useAutomationScheduler() {
             success = await sendEmailSmtp(inv, businessName);
             if (success) emailSent++;
           } else if (ch === "whatsapp" && inv.customerPhone) {
-            success = sendWhatsApp(inv, businessName);
+            success = await sendWhatsApp(inv, businessName);
             if (success) waSent++;
           } else if (ch === "sms" && inv.customerPhone) {
             success = sendSms(inv, businessName);

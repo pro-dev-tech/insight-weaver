@@ -123,7 +123,7 @@ function StrikingLines() {
       {lines.map((l, i) => (
         <motion.div
           key={i}
-          className="absolute h-[2px] bg-gradient-to-r from-transparent via-sky-400 to-transparent"
+          className="absolute h-[2px] bg-gradient-to-r from-transparent via-white to-transparent"
           style={{ top: l.top, width: l.width, opacity: l.opacity }}
           animate={{ x: [600, -300] }}
           transition={{ duration: l.duration, repeat: Infinity, repeatDelay: 0.6 + l.delay, ease: "easeOut" }}
