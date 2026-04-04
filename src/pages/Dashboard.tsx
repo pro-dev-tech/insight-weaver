@@ -41,7 +41,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function Dashboard() {
   const { invoices, customers, hasData } = useInvoiceData();
   const navigate = useNavigate();
+  const location = useLocation();
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.showTour) {
+      setTourOpen(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   if (!hasData) {
     return (
