@@ -243,6 +243,7 @@ export default function Dashboard() {
           {expandedChart && renderChart(expandedChart, 450)}
         </DialogContent>
       </Dialog>
+      <AppTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 }
