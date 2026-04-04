@@ -41,7 +41,8 @@ export default function Login() {
       await login(email, password);
       toast.success("Welcome back!");
       setShowMoneyRain(true);
-      setTimeout(() => navigate("/dashboard"), 2500);
+      const tourDone = localStorage.getItem("invoiceflow_tour_completed");
+      setTimeout(() => navigate("/dashboard", { state: { showTour: !tourDone } }), 2500);
     } catch {
       toast.error("Login failed");
     } finally {
