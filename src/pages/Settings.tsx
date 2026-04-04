@@ -16,6 +16,7 @@ import { AppTour } from "@/components/AppTour";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const [tourOpen, setTourOpen] = useState(false);
 
   // Payment security
   const [paymentPassword, setPaymentPassword] = useState("");
