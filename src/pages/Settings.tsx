@@ -261,7 +261,11 @@ export default function SettingsPage() {
           <h1 className="text-xl font-bold text-foreground">Settings</h1>
           <p className="text-sm text-muted-foreground">Configure your payment recovery system</p>
         </div>
-        <Button size="sm" className="gap-2" onClick={handleSave}><Save className="w-4 h-4" /> Save</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => setTourOpen(true)}><Sparkles className="w-4 h-4" /> App Tour</Button>
+          <Button size="sm" className="gap-2" onClick={handleSave}><Save className="w-4 h-4" /> Save</Button>
+        </div>
+        <AppTour open={tourOpen} onClose={() => setTourOpen(false)} />
       </div>
 
       <Tabs defaultValue="payment">
