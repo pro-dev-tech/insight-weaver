@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   FileText, BarChart3, Bell, Shield, Zap, Users, ArrowRight,
-  CheckCircle2, Clock, TrendingUp, Linkedin, ChevronDown,
+  CheckCircle2, Clock, TrendingUp, Linkedin, ChevronDown, Briefcase,
 } from "lucide-react";
 import type { Easing } from "framer-motion";
 
@@ -53,7 +54,7 @@ const pricingPlans = [
   },
 ];
 
-// Marquee component for features — pure CSS for glitch-free infinite loop
+// Marquee component — pure CSS seamless infinite loop
 function FeatureMarquee() {
   const renderCard = (f: typeof features[0], i: number) => (
     <div key={`${f.title}-${i}`} className="flex-shrink-0 w-72 hover:scale-105 hover:-translate-y-2 transition-transform duration-300">
@@ -71,7 +72,7 @@ function FeatureMarquee() {
 
   return (
     <div className="overflow-hidden py-4">
-      <div className="flex gap-6 animate-marquee-scroll">
+      <div className="flex gap-6 animate-marquee-scroll" style={{ width: "max-content" }}>
         {features.map((f, i) => renderCard(f, i))}
         {features.map((f, i) => renderCard(f, i + features.length))}
       </div>
@@ -135,6 +136,7 @@ function StrikingLines() {
 
 export default function Landing() {
   const [navScrolled, setNavScrolled] = useState(false);
+  const [careerOpen, setCareerOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setNavScrolled(window.scrollY > 20);
@@ -153,7 +155,7 @@ export default function Landing() {
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
               <FileText className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold tracking-tight">InvoiceFlow</span>
+            <span className="text-xl font-bold tracking-tight">Invoice Flow</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors relative group">
@@ -189,20 +191,13 @@ export default function Landing() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/3 blur-[150px]" />
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-8"
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          >
-            <Zap className="w-3 h-3" /> AI-Powered Invoice Recovery Platform
-          </motion.div>
           <motion.h1
             className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6"
             initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
-            Invoicing that{" "}
             <span className="relative inline-block">
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                moves as fast
+              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent whitespace-nowrap">
+                Invoicing that moves as fast
               </span>
               <StrikingLines />
             </span>
@@ -394,10 +389,10 @@ export default function Landing() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium text-accent mb-4">
               About Us
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">About <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">InvoiceFlow</span></h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">About <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Invoice Flow</span></h2>
             <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-base">
               We're a team of finance and technology professionals who believe that every business — from solo freelancers to growing enterprises —
-              deserves world-class invoicing tools. InvoiceFlow was born from the frustration of clunky billing systems and the vision of making
+              deserves world-class invoicing tools. Invoice Flow was born from the frustration of clunky billing systems and the vision of making
               cash flow management effortless.
             </p>
           </motion.div>
@@ -420,43 +415,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Careers */}
-      <section className="py-28 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-4">
-              Careers
-            </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Join our <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">team</span></h2>
-            <p className="text-muted-foreground max-w-xl mx-auto mb-10 text-base">
-              We're always looking for talented people passionate about fintech, AI, and building products that matter.
-            </p>
-          </motion.div>
-          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-10">
-            {[
-              { role: "Full Stack Engineer", location: "Remote, India", type: "Full-time" },
-              { role: "Product Designer", location: "Bangalore", type: "Full-time" },
-              { role: "ML Engineer", location: "Remote", type: "Full-time" },
-              { role: "Customer Success", location: "Mumbai", type: "Full-time" },
-            ].map((job, i) => (
-              <motion.div key={job.role} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <Card className="border-border/40 bg-card/80 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 text-left group">
-                  <CardContent className="p-5">
-                    <h4 className="font-semibold text-sm group-hover:text-primary transition-colors">{job.role}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">{job.location} · {job.type}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-          <Button variant="outline" className="border-border/60 hover:border-primary/40" asChild>
-            <a href="mailto:careers@invoiceflow.in">Apply Now <ArrowRight className="w-4 h-4 ml-1" /></a>
-          </Button>
-        </div>
-      </section>
-
       {/* CTA */}
-      <section className="py-28 px-6 bg-muted/20 relative overflow-hidden">
+      <section className="py-28 px-6 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/5 blur-[120px]" />
         </div>
@@ -470,7 +430,7 @@ export default function Landing() {
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Start growing your business.</span>
             </h2>
             <p className="text-muted-foreground mb-10 max-w-lg mx-auto text-base">
-              Join thousands of businesses that use InvoiceFlow to streamline their billing,
+              Join thousands of businesses that use Invoice Flow to streamline their billing,
               reduce late payments, and focus on what matters most.
             </p>
             <Button size="lg" className="text-base px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
@@ -491,7 +451,7 @@ export default function Landing() {
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                   <FileText className="w-4 h-4 text-primary-foreground" />
                 </div>
-                <span className="font-bold">InvoiceFlow</span>
+                <span className="font-bold">Invoice Flow</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Modern invoicing for modern businesses. Simple, fast, and reliable.
@@ -508,7 +468,11 @@ export default function Landing() {
               <h4 className="font-semibold text-sm mb-3">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#about" className="hover:text-foreground transition-colors">About Us</a></li>
-                <li><a href="#about" className="hover:text-foreground transition-colors">Careers</a></li>
+                <li>
+                  <button onClick={() => setCareerOpen(true)} className="hover:text-foreground transition-colors">
+                    Careers
+                  </button>
+                </li>
                 <li>
                   <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-1">
                     <Linkedin className="w-3 h-3" /> LinkedIn
@@ -526,11 +490,36 @@ export default function Landing() {
           </div>
           <Separator className="mb-6 bg-border/40" />
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-            <p>© {new Date().getFullYear()} InvoiceFlow. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Invoice Flow. All rights reserved.</p>
             <p>Made with precision for businesses that value their time.</p>
           </div>
         </div>
       </footer>
+
+      {/* Career Dialog */}
+      <Dialog open={careerOpen} onOpenChange={setCareerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-primary" /> Careers at Invoice Flow
+            </DialogTitle>
+          </DialogHeader>
+          <Card className="p-6 bg-secondary/20 border-border/50 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+              <Briefcase className="w-7 h-7 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground">No Open Positions</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We don't have any open positions at the moment. Please check back later or follow us on LinkedIn for updates.
+            </p>
+            <Button variant="outline" size="sm" asChild>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="gap-1">
+                <Linkedin className="w-3 h-3" /> Follow on LinkedIn
+              </a>
+            </Button>
+          </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
