@@ -63,8 +63,8 @@ export default function Login() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
               <FileText className="w-7 h-7 text-primary" />
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-3">
-              Welcome back to <span className="gradient-text">InvoiceFlow</span>
+             <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-3">
+              Welcome back to <span className="gradient-text">Invoice Flow</span>
             </h1>
             <p className="text-muted-foreground leading-relaxed">
               Automate invoice tracking, payment reminders, and receivables analytics.
