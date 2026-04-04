@@ -17,7 +17,7 @@ import WhatsAppApiWizard from "@/components/WhatsAppApiWizard";
 import { toast } from "sonner";
 import {
   MessageCircle, Mail, Phone, Send, Save,
-  FileText, PenLine, X, Clock, Zap, CheckCircle2, Loader2, Key,
+  FileText, PenLine, X, Clock, Zap, CheckCircle2, Loader2, Key, StopCircle,
 } from "lucide-react";
 
 const DEFAULT_WA_TEMPLATE = `Dear {{name}},\n\nYour invoice {{invoiceNumber}} of Rs {{amount}} is overdue.\n\nPay instantly here:\n{{upiLink}}\n\nor scan the QR to pay:\n{{payLink}}\n\nThank you.\n{{businessName}}`;
@@ -31,24 +31,21 @@ interface SmtpConfig {
 export default function Notifications() {
   const { invoices, hasData, updateInvoice } = useInvoiceData();
   const { user } = useAuth();
-  const { runAutomation } = useAutomationScheduler();
+  const { runAutomation, stopAutomation, isRunning } = useAutomationScheduler();
 
   const [waEditMode, setWaEditMode] = useState(false);
   const [smsEditMode, setSmsEditMode] = useState(false);
   const [emailEditMode, setEmailEditMode] = useState(false);
 
-  // WhatsApp config
   const [waMode, setWaMode] = useState<"link" | "api">(() => localStorage.getItem("payrecovery_wa_mode") as any || "link");
   const [waSenderNumber, setWaSenderNumber] = useState(() => localStorage.getItem("payrecovery_wa_sender") || "");
   const [waTemplate, setWaTemplate] = useState(() => localStorage.getItem("payrecovery_wa_template") || DEFAULT_WA_TEMPLATE);
   const [showWaWizard, setShowWaWizard] = useState(false);
   const [waApiConfigured, setWaApiConfigured] = useState(() => !!localStorage.getItem("payrecovery_wa_api_key"));
 
-  // SMS config
   const [smsSenderNumber, setSmsSenderNumber] = useState(() => localStorage.getItem("payrecovery_sms_sender") || "");
   const [smsTemplate, setSmsTemplate] = useState(() => localStorage.getItem("payrecovery_sms_template") || DEFAULT_SMS_TEMPLATE);
 
-  // Email config
   const [emailMode, setEmailMode] = useState<"smtp" | "mailto">(() => localStorage.getItem("payrecovery_email_mode") as any || "mailto");
   const [emailTemplate, setEmailTemplate] = useState(() => localStorage.getItem("payrecovery_email_template") || DEFAULT_EMAIL_TEMPLATE);
   const [smtp, setSmtp] = useState<SmtpConfig>(() => {
@@ -56,14 +53,12 @@ export default function Notifications() {
     catch { return { senderEmail: "", smtpServer: "smtp.gmail.com", smtpPort: "587", smtpUsername: "", smtpPassword: "", useTls: true }; }
   });
 
-  // Automation config
   const [autoFrequency, setAutoFrequency] = useState(() => localStorage.getItem("payrecovery_auto_freq") || "weekly");
   const [autoTime, setAutoTime] = useState(() => localStorage.getItem("payrecovery_auto_time") || "09:00");
   const [autoChannel, setAutoChannel] = useState(() => localStorage.getItem("payrecovery_auto_channel") || "email");
   const [autoEscalation, setAutoEscalation] = useState(() => localStorage.getItem("payrecovery_auto_escalation") === "true");
   const [autoEnabled, setAutoEnabled] = useState(() => localStorage.getItem("payrecovery_auto_enabled") === "true");
   const [autoEditMode, setAutoEditMode] = useState(false);
-  const [autoRunning, setAutoRunning] = useState(false);
 
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const [sendTarget, setSendTarget] = useState<"all" | "selected">("all");
@@ -93,7 +88,6 @@ export default function Notifications() {
 
   const getTargetInvoices = () => sendTarget === "all" ? unpaidInvoices : unpaidInvoices.filter((i) => selectedInvoices.includes(i.id));
 
-  // WhatsApp
   const handleSaveWaConfig = () => {
     localStorage.setItem("payrecovery_wa_mode", waMode);
     localStorage.setItem("payrecovery_wa_sender", waSenderNumber);
@@ -102,47 +96,13 @@ export default function Notifications() {
     setWaEditMode(false);
   };
 
-  const handleSendWhatsAppApi = async (inv: Invoice) => {
-    const phone = (inv.customerPhone || "").replace(/[^0-9]/g, "");
-    if (!phone) { toast.error(`No phone for ${inv.customerName}`); return; }
-    const msg = fillTemplate(waTemplate, inv);
-    try {
-      const res = await fetch("http://localhost:3001/api/whatsapp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: phone,
-          message: msg,
-          apiKey: localStorage.getItem("payrecovery_wa_api_key"),
-          phoneNumberId: localStorage.getItem("payrecovery_wa_phone_id"),
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        updateInvoice(inv.id, { remindersSent: (inv.remindersSent || 0) + 1, lastReminderDate: new Date().toISOString().split("T")[0] });
-        toast.success(`WhatsApp sent to ${inv.customerName}`);
-      } else {
-        toast.error(`WhatsApp API failed: ${data.error}. Falling back to link...`);
-        handleSendWhatsAppLink(inv);
-      }
-    } catch {
-      toast.error("Backend offline, opening WhatsApp link...");
-      handleSendWhatsAppLink(inv);
-    }
-  };
-
-  const handleSendWhatsAppLink = (inv: Invoice) => {
+  const handleSendWhatsApp = (inv: Invoice) => {
     const phone = (inv.customerPhone || "").replace(/[^0-9]/g, "");
     if (!phone) { toast.error(`No phone for ${inv.customerName}`); return; }
     const msg = fillTemplate(waTemplate, inv);
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
     updateInvoice(inv.id, { remindersSent: (inv.remindersSent || 0) + 1, lastReminderDate: new Date().toISOString().split("T")[0] });
     toast.success(`WhatsApp opened for ${inv.customerName}`);
-  };
-
-  const handleSendWhatsApp = (inv: Invoice) => {
-    if (waMode === "api" && waApiConfigured) handleSendWhatsAppApi(inv);
-    else handleSendWhatsAppLink(inv);
   };
 
   const handleBulkWhatsApp = () => {
@@ -152,7 +112,6 @@ export default function Notifications() {
     toast.success(`Sending ${targets.length} WhatsApp messages...`);
   };
 
-  // SMS
   const handleSaveSmsConfig = () => {
     localStorage.setItem("payrecovery_sms_sender", smsSenderNumber);
     localStorage.setItem("payrecovery_sms_template", smsTemplate);
@@ -176,7 +135,6 @@ export default function Notifications() {
     toast.success(`Opening ${targets.length} SMS...`);
   };
 
-  // Email
   const handleSaveEmailConfig = () => {
     localStorage.setItem("payrecovery_email_mode", emailMode);
     localStorage.setItem("payrecovery_email_template", emailTemplate);
@@ -241,8 +199,7 @@ export default function Notifications() {
   };
 
   const handleRunNow = async () => {
-    setAutoRunning(true);
-    try { await runAutomation(); } finally { setAutoRunning(false); }
+    await runAutomation();
   };
 
   if (!hasData) {
@@ -277,10 +234,10 @@ export default function Notifications() {
           {showWaWizard ? (
             <WhatsAppApiWizard
               onClose={() => setShowWaWizard(false)}
-              onComplete={(apiKey, phoneNumberId) => {
+              onComplete={() => {
                 setWaApiConfigured(true);
                 setWaMode("api");
-                toast.success("WhatsApp API configured! Automated sending is now available.");
+                toast.success("WhatsApp API configured!");
               }}
             />
           ) : (
@@ -288,9 +245,7 @@ export default function Notifications() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-foreground">WhatsApp Configuration</h3>
-                  {waApiConfigured && (
-                    <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 text-[10px]">API Connected</Badge>
-                  )}
+                  {waApiConfigured && <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 text-[10px]">API Connected</Badge>}
                 </div>
                 {!waEditMode ? (
                   <Button size="sm" variant="outline" className="gap-1" onClick={() => setWaEditMode(true)}><PenLine className="w-3 h-3" /> Edit</Button>
@@ -303,70 +258,54 @@ export default function Notifications() {
                   <div className="space-y-3">
                     <Label className="text-xs font-semibold text-foreground">Choose WhatsApp Method</Label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setWaMode("link")}
-                        className={`p-3 rounded-lg border text-left transition-all ${waMode === "link" ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"}`}
-                      >
+                      <button onClick={() => setWaMode("link")} className={`p-3 rounded-lg border text-left transition-all ${waMode === "link" ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <MessageCircle className="w-4 h-4 text-accent" />
                           <span className="text-xs font-semibold text-foreground">Click-to-Chat Link</span>
                         </div>
                         <p className="text-[10px] text-muted-foreground">Opens WhatsApp web/app with pre-filled message. No API key needed.</p>
                       </button>
-                      <button
-                        onClick={() => setWaMode("api")}
-                        className={`p-3 rounded-lg border text-left transition-all ${waMode === "api" ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"}`}
-                      >
+                      <button onClick={() => setWaMode("api")} className={`p-3 rounded-lg border text-left transition-all ${waMode === "api" ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <Key className="w-4 h-4 text-primary" />
                           <span className="text-xs font-semibold text-foreground">WhatsApp Business API</span>
                         </div>
-                        <p className="text-[10px] text-muted-foreground">Fully automated sending via Meta's official API. Requires API key.</p>
+                        <p className="text-[10px] text-muted-foreground">Fully automated sending via Meta's official API.</p>
                       </button>
                     </div>
                   </div>
-
                   {waMode === "api" && !waApiConfigured && (
                     <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
                       <p className="text-xs text-foreground font-semibold">Do you have your own WhatsApp Business API key?</p>
-                      <p className="text-[11px] text-muted-foreground">We'll walk you through setup step-by-step — including how the API works, how to get a key, and how to connect it.</p>
                       <div className="flex gap-2">
-                        <Button size="sm" className="gap-1" onClick={() => setShowWaWizard(true)}>
-                          <Key className="w-3 h-3" /> Yes, Set Up API Key
-                        </Button>
-                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowWaWizard(true)}>
-                          No, Help Me Get One
-                        </Button>
+                        <Button size="sm" className="gap-1" onClick={() => setShowWaWizard(true)}><Key className="w-3 h-3" /> Yes, Set Up API Key</Button>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowWaWizard(true)}>No, Help Me Get One</Button>
                       </div>
                     </div>
                   )}
-
                   {waMode === "api" && waApiConfigured && (
                     <div className="p-3 rounded-lg bg-accent/5 border border-accent/20 space-y-2">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-accent" />
                         <p className="text-xs text-foreground font-semibold">API Connected</p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground">Your WhatsApp Business API is configured. Messages will be sent automatically.</p>
                       <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => setShowWaWizard(true)}>
-                        <Key className="w-3 h-3" /> Reconfigure API Key
+                        <Key className="w-3 h-3" /> Reconfigure
                       </Button>
                     </div>
                   )}
-
                   <div className="space-y-3">
                     <div className="space-y-1"><Label className="text-xs">Sender Number</Label><Input placeholder="919876543210" value={waSenderNumber} onChange={(e) => setWaSenderNumber(e.target.value)} /></div>
                     <div className="space-y-1">
                       <Label className="text-xs">Message Template</Label>
                       <Textarea rows={8} value={waTemplate} onChange={(e) => setWaTemplate(e.target.value)} className="font-mono text-xs" />
-                      <p className="text-[10px] text-muted-foreground">Variables: {"{{name}}, {{invoiceNumber}}, {{amount}}, {{dueDate}}, {{upiLink}}, {{payLink}}, {{businessName}}"}</p>
                     </div>
                   </div>
                   <Button size="sm" className="gap-2" onClick={handleSaveWaConfig}><Save className="w-4 h-4" /> Save</Button>
                 </>
               ) : (
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Mode</span><span className="text-xs text-foreground capitalize">{waMode === "api" && waApiConfigured ? "API (Automated)" : waMode === "api" ? "API (Not configured)" : "Click-to-Chat Link"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground text-xs">Mode</span><span className="text-xs text-foreground capitalize">{waMode === "api" && waApiConfigured ? "API (Automated)" : "Click-to-Chat (wa.me)"}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground text-xs">Sender</span><span className="text-xs text-foreground">{waSenderNumber || "—"}</span></div>
                 </div>
               )}
@@ -450,7 +389,6 @@ export default function Notifications() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground text-xs">Mode</span><span className="text-xs text-foreground capitalize">{emailMode}</span></div>
                 {emailMode === "smtp" && <div className="flex justify-between"><span className="text-muted-foreground text-xs">SMTP Server</span><span className="text-xs text-foreground">{smtp.smtpServer || "—"}</span></div>}
-                <div className="flex justify-between"><span className="text-muted-foreground text-xs">Sender</span><span className="text-xs text-foreground">{smtp.senderEmail || "—"}</span></div>
               </div>
             )}
           </Card>
@@ -469,7 +407,6 @@ export default function Notifications() {
                 </SelectContent>
               </Select>
             </div>
-
             <div className="flex gap-2 flex-wrap">
               <Button size="sm" variant="outline" className="gap-2" onClick={handleBulkWhatsApp}>
                 <MessageCircle className="w-4 h-4 text-accent" /> WhatsApp ({sendTarget === "all" ? unpaidInvoices.filter(i => i.customerPhone).length : selectedInvoices.length})
@@ -481,7 +418,6 @@ export default function Notifications() {
                 <Mail className="w-4 h-4 text-chart-4" /> Email ({sendTarget === "all" ? unpaidInvoices.filter(i => i.customerEmail).length : selectedInvoices.length})
               </Button>
             </div>
-
             {sendTarget === "selected" && (
               <div className="max-h-64 overflow-y-auto space-y-1 border border-border/50 rounded-lg p-2">
                 {unpaidInvoices.map((inv) => (
@@ -496,7 +432,6 @@ export default function Notifications() {
                 ))}
               </div>
             )}
-
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-muted-foreground">Individual Send</h4>
               <div className="max-h-80 overflow-y-auto space-y-1">
@@ -539,9 +474,17 @@ export default function Notifications() {
           </div>
           <div className="flex items-center gap-2">
             {!autoEditMode && (
-              <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleRunNow} disabled={autoRunning || unpaidInvoices.length === 0}>
-                {autoRunning ? <><Loader2 className="w-3 h-3 animate-spin" /> Running...</> : <><Send className="w-3 h-3" /> Run Now</>}
-              </Button>
+              <>
+                {isRunning ? (
+                  <Button size="sm" variant="destructive" className="gap-1 text-xs" onClick={stopAutomation}>
+                    <StopCircle className="w-3 h-3" /> Stop (Ctrl+C)
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleRunNow} disabled={unpaidInvoices.length === 0}>
+                    <Send className="w-3 h-3" /> Run Now
+                  </Button>
+                )}
+              </>
             )}
             {!autoEditMode ? (
               <Button size="sm" variant="outline" className="gap-1" onClick={() => setAutoEditMode(true)}><PenLine className="w-3 h-3" /> Edit</Button>
@@ -556,7 +499,7 @@ export default function Notifications() {
               <Switch checked={autoEnabled} onCheckedChange={setAutoEnabled} />
               <div>
                 <Label className="text-xs font-semibold">Enable Automatic Sending</Label>
-                <p className="text-[10px] text-muted-foreground">When enabled, notifications will be sent automatically at the scheduled time</p>
+                <p className="text-[10px] text-muted-foreground">Notifications sent automatically at scheduled time</p>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -572,17 +515,14 @@ export default function Notifications() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Send Time</Label>
-                <Input type="time" value={autoTime} onChange={(e) => setAutoTime(e.target.value)} />
-              </div>
+              <div className="space-y-1"><Label className="text-xs">Send Time</Label><Input type="time" value={autoTime} onChange={(e) => setAutoTime(e.target.value)} /></div>
               <div className="space-y-1">
                 <Label className="text-xs">Primary Channel</Label>
                 <Select value={autoChannel} onValueChange={setAutoChannel}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="email">Email (via SMTP)</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp {waApiConfigured ? "(API — Automated)" : "(wa.me link)"}</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp (wa.me link)</SelectItem>
                     <SelectItem value="sms">SMS (sms: link)</SelectItem>
                     <SelectItem value="multi">Multi-channel (All)</SelectItem>
                   </SelectContent>
@@ -590,16 +530,8 @@ export default function Notifications() {
               </div>
               <div className="flex items-center gap-2 pt-5">
                 <Switch checked={autoEscalation} onCheckedChange={setAutoEscalation} />
-                <Label className="text-xs">Auto-escalation (increase urgency)</Label>
+                <Label className="text-xs">Auto-escalation</Label>
               </div>
-            </div>
-            <div className="p-3 rounded-lg bg-secondary/20 border border-border/30 text-[11px] text-muted-foreground space-y-1">
-              <p className="font-semibold text-foreground text-xs">How it works:</p>
-              <p>• <strong>Email:</strong> Sent via your configured SMTP server directly to customer emails</p>
-              <p>• <strong>WhatsApp:</strong> {waApiConfigured ? "Sent automatically via WhatsApp Business API" : "Opens wa.me pre-filled chat links (configure API for full automation)"}</p>
-              <p>• <strong>SMS:</strong> Opens device SMS app with pre-filled message</p>
-              <p>• <strong>Multi-channel:</strong> Sends via all channels simultaneously</p>
-              <p className="text-primary font-medium mt-1">Keep the app open at the scheduled time for automated sends.</p>
             </div>
             <Button size="sm" className="gap-2" onClick={handleSaveAutomation}><Save className="w-4 h-4" /> Save Automation</Button>
           </div>

@@ -43,7 +43,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
           <Shield className="w-4 h-4 text-primary" />
         </div>
         {!collapsed && (
-          <span className="text-sm font-bold gradient-text whitespace-nowrap flex-1">PayRecovery AI</span>
+          <span className="text-sm font-bold gradient-text whitespace-nowrap flex-1">Invoice Flow</span>
         )}
         <button
           onClick={onToggle}

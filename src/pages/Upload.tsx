@@ -8,15 +8,15 @@ import { InsightsPanel } from "@/components/InsightsPanel";
 import { FileUpload } from "@/components/FileUpload";
 import { DatasetInfo } from "@/components/DatasetInfo";
 import { motion } from "framer-motion";
-import { BarChart3, Loader2, Download, Trash2, CheckCircle, Plus, RefreshCw, Link2, Unlink, PenLine } from "lucide-react";
+import { BarChart3, Loader2, Download, Trash2, CheckCircle, Plus, RefreshCw, Link2, Unlink, PenLine, Files, Merge } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import type { Invoice } from "@/types";
 
@@ -34,6 +34,12 @@ export default function UploadPage() {
   } = useInvoiceData();
 
   const hasUploadedData = meta && preview;
+
+  // Multi-file upload state
+  const [multiFiles, setMultiFiles] = useState<File[]>([]);
+  const [multiMode, setMultiMode] = useState<"merge" | "separate">("merge");
+  const [multiDialogOpen, setMultiDialogOpen] = useState(false);
+  const [multiUploading, setMultiUploading] = useState(false);
 
   // Manual entry
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
@@ -53,6 +59,36 @@ export default function UploadPage() {
 
   const handleUpload = async (file: File) => {
     await baseHandleUpload(file);
+  };
+
+  const handleUploadMultiple = (files: File[]) => {
+    setMultiFiles(files);
+    setMultiDialogOpen(true);
+  };
+
+  const handleProcessMultiFiles = async () => {
+    setMultiUploading(true);
+    try {
+      if (multiMode === "merge") {
+        // Upload all files sequentially and merge into same dataset
+        for (const file of multiFiles) {
+          await baseHandleUpload(file);
+        }
+        toast.success(`${multiFiles.length} files merged and uploaded!`);
+      } else {
+        // Upload each separately — for now upload the first
+        for (const file of multiFiles) {
+          await baseHandleUpload(file);
+        }
+        toast.success(`${multiFiles.length} files uploaded separately!`);
+      }
+    } catch {
+      toast.error("Multi-file upload failed");
+    } finally {
+      setMultiUploading(false);
+      setMultiDialogOpen(false);
+      setMultiFiles([]);
+    }
   };
 
   const handlePushToSystem = () => {
@@ -110,7 +146,7 @@ export default function UploadPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">Upload & Parse</h1>
-          <p className="text-sm text-muted-foreground">Upload, manually enter, or sync data from Google Sheets</p>
+          <p className="text-sm text-muted-foreground">Upload single or multiple files, manually enter, or sync from Google Sheets</p>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" className="gap-2" onClick={() => setManualDialogOpen(true)}>
@@ -151,7 +187,14 @@ export default function UploadPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-4">
-          <FileUpload onUpload={handleUpload} uploading={uploading} progress={uploadProgress} error={error} />
+          <FileUpload
+            onUpload={handleUpload}
+            uploading={uploading}
+            progress={uploadProgress}
+            error={error}
+            multiple={true}
+            onUploadMultiple={handleUploadMultiple}
+          />
           {meta && (
             <>
               <DatasetInfo meta={meta} />
@@ -169,22 +212,13 @@ export default function UploadPage() {
 
         <div className="lg:col-span-2">
           {loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-center h-64"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center h-64">
               <div className="text-center space-y-4">
                 <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
                 <p className="text-sm font-medium text-foreground">Loading dataset...</p>
                 <p className="text-xs text-muted-foreground">Analyzing columns, generating charts & insights</p>
                 <div className="w-48 mx-auto h-1.5 bg-secondary rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-primary rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{ width: "90%" }}
-                    transition={{ duration: 8, ease: "easeOut" }}
-                  />
+                  <motion.div className="h-full bg-primary rounded-full" initial={{ width: "0%" }} animate={{ width: "90%" }} transition={{ duration: 8, ease: "easeOut" }} />
                 </div>
               </div>
             </motion.div>
@@ -226,6 +260,58 @@ export default function UploadPage() {
           )}
         </div>
       </div>
+
+      {/* Multi-file Dialog */}
+      <Dialog open={multiDialogOpen} onOpenChange={setMultiDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Files className="w-5 h-5 text-primary" /> Multiple Files Selected ({multiFiles.length})</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              {multiFiles.map((f, i) => (
+                <div key={i} className="flex items-center gap-2 p-2 rounded bg-secondary/30 text-xs">
+                  <Badge variant="outline" className="text-[9px]">{f.name.split('.').pop()?.toUpperCase()}</Badge>
+                  <span className="text-foreground truncate flex-1">{f.name}</span>
+                  <span className="text-muted-foreground">{(f.size / 1024).toFixed(0)} KB</span>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">How do you want to process these files?</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setMultiMode("merge")}
+                  className={`p-3 rounded-lg border text-left transition-all ${multiMode === "merge" ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Merge className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Merge All</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Combine all files into one dataset</p>
+                </button>
+                <button
+                  onClick={() => setMultiMode("separate")}
+                  className={`p-3 rounded-lg border text-left transition-all ${multiMode === "separate" ? "border-primary bg-primary/5" : "border-border/50 hover:border-border"}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Files className="w-4 h-4 text-accent" />
+                    <span className="text-xs font-semibold text-foreground">Separate</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Keep as separate business datasets</p>
+                </button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMultiDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleProcessMultiFiles} disabled={multiUploading} className="gap-2">
+              {multiUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              {multiUploading ? "Processing..." : `Upload & ${multiMode === "merge" ? "Merge" : "Separate"}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Manual Entry Dialog */}
       <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>

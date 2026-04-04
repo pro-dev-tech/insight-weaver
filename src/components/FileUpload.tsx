@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, Files } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 
@@ -9,6 +9,8 @@ interface FileUploadProps {
   uploading: boolean;
   progress: number;
   error: string | null;
+  multiple?: boolean;
+  onUploadMultiple?: (files: File[]) => void;
 }
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50MB
@@ -18,19 +20,24 @@ const ACCEPTED = {
   "application/vnd.ms-excel": [".xls"],
 };
 
-export function FileUpload({ onUpload, uploading, progress, error }: FileUploadProps) {
+export function FileUpload({ onUpload, uploading, progress, error, multiple = false, onUploadMultiple }: FileUploadProps) {
   const onDrop = useCallback(
     (accepted: File[]) => {
-      if (accepted.length > 0) onUpload(accepted[0]);
+      if (accepted.length === 0) return;
+      if (multiple && onUploadMultiple && accepted.length > 1) {
+        onUploadMultiple(accepted);
+      } else if (accepted.length > 0) {
+        onUpload(accepted[0]);
+      }
     },
-    [onUpload]
+    [onUpload, multiple, onUploadMultiple]
   );
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     accept: ACCEPTED,
     maxSize: MAX_SIZE,
-    multiple: false,
+    multiple,
     disabled: uploading,
   });
 
@@ -73,12 +80,12 @@ export function FileUpload({ onUpload, uploading, progress, error }: FileUploadP
               className="space-y-2"
             >
               <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Upload className="w-5 h-5 text-primary" />
+                {multiple ? <Files className="w-5 h-5 text-primary" /> : <Upload className="w-5 h-5 text-primary" />}
               </div>
               <p className="text-sm font-medium text-foreground">
-                {isDragActive ? "Drop file here" : "Drag & drop or click"}
+                {isDragActive ? "Drop file(s) here" : multiple ? "Drag & drop multiple files or click" : "Drag & drop or click"}
               </p>
-              <p className="text-xs text-muted-foreground">CSV, XLSX, XLS — Max 50MB</p>
+              <p className="text-xs text-muted-foreground">CSV, XLSX, XLS — Max 50MB{multiple ? " each" : ""}</p>
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,12 +1,12 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useInvoiceData } from "@/contexts/InvoiceDataContext";
 import { toast } from "sonner";
 import type { Invoice } from "@/types";
 
 interface AutomationConfig {
-  frequency: string; // daily, weekly, biweekly, monthly
-  time: string; // HH:mm
-  channel: string; // email, whatsapp, sms, multi
+  frequency: string;
+  time: string;
+  channel: string;
   escalation: boolean;
   enabled: boolean;
 }
@@ -32,11 +32,9 @@ function setLastRunDate(date: string) {
 function shouldRunToday(config: AutomationConfig): boolean {
   const lastRun = getLastRunDate();
   if (!lastRun) return true;
-
   const last = new Date(lastRun);
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
-
   switch (config.frequency) {
     case "daily": return diffDays >= 1;
     case "weekly": return diffDays >= 7;
@@ -53,11 +51,8 @@ function isTimeToRun(config: AutomationConfig): boolean {
 }
 
 function getSmtpConfig() {
-  try {
-    return JSON.parse(localStorage.getItem("payrecovery_smtp") || "{}");
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(localStorage.getItem("payrecovery_smtp") || "{}"); }
+  catch { return {}; }
 }
 
 function fillTemplate(template: string, inv: Invoice, businessName: string) {
@@ -81,6 +76,8 @@ function fillTemplate(template: string, inv: Invoice, businessName: string) {
 export function useAutomationScheduler() {
   const { invoices, updateInvoice } = useInvoiceData();
   const runningRef = useRef(false);
+  const stopRef = useRef(false);
+  const [isRunning, setIsRunning] = useState(false);
 
   const getBusinessName = useCallback(() => {
     try {
@@ -95,33 +92,21 @@ export function useAutomationScheduler() {
     const smtpConfig = getSmtpConfig();
     if (!smtpConfig.smtpServer || !smtpConfig.smtpPassword) return false;
     if (!inv.customerEmail) return false;
-
     const emailTemplate = localStorage.getItem("payrecovery_email_template") ||
       `Dear {{name}},\n\nThis is a reminder from {{businessName}} regarding invoice {{invoiceNumber}}.\n\nAmount: ₹{{amount}}\n\nPlease pay at your earliest.\n\n{{payLink}}\n{{upiLink}}\n\nThank you.\n\n{{businessName}}`;
     const body = fillTemplate(emailTemplate, inv, businessName);
-
     try {
       const res = await fetch("http://localhost:3001/api/email/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          smtp: {
-            host: smtpConfig.smtpServer,
-            port: parseInt(smtpConfig.smtpPort || "587"),
-            email: smtpConfig.senderEmail || smtpConfig.smtpUsername,
-            username: smtpConfig.smtpUsername,
-            password: smtpConfig.smtpPassword,
-            tls: smtpConfig.useTls !== false,
-          },
+          smtp: { host: smtpConfig.smtpServer, port: parseInt(smtpConfig.smtpPort || "587"), email: smtpConfig.senderEmail || smtpConfig.smtpUsername, username: smtpConfig.smtpUsername, password: smtpConfig.smtpPassword, tls: smtpConfig.useTls !== false },
           to: inv.customerEmail,
           subject: `Payment Reminder - Invoice ${inv.invoiceNumber}`,
           message: body,
         }),
       });
       return res.ok;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   }, []);
 
   const sendWhatsApp = useCallback(async (inv: Invoice, businessName: string) => {
@@ -137,17 +122,13 @@ export function useAutomationScheduler() {
     if (waApiKey && waPhoneId) {
       try {
         const res = await fetch("http://localhost:3001/api/whatsapp/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ to: phone, message: msg, apiKey: waApiKey, phoneNumberId: waPhoneId }),
         });
         const data = await res.json();
         if (data.success) return true;
-      } catch {
-        // Fall through to link method
-      }
+      } catch { /* fallback */ }
     }
-
     // Fallback to wa.me link
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
     return true;
@@ -163,9 +144,16 @@ export function useAutomationScheduler() {
     return true;
   }, []);
 
+  const stopAutomation = useCallback(() => {
+    stopRef.current = true;
+    toast.info("Stopping automation...");
+  }, []);
+
   const runAutomation = useCallback(async () => {
     if (runningRef.current) return;
     runningRef.current = true;
+    stopRef.current = false;
+    setIsRunning(true);
 
     const config = getConfig();
     const businessName = getBusinessName();
@@ -173,17 +161,24 @@ export function useAutomationScheduler() {
 
     if (unpaid.length === 0) {
       runningRef.current = false;
+      setIsRunning(false);
       return;
     }
 
     let emailSent = 0, waSent = 0, smsSent = 0, failed = 0;
 
     for (const inv of unpaid) {
+      if (stopRef.current) {
+        toast.info("Automation stopped by user");
+        break;
+      }
+
       const channels = config.channel === "multi"
         ? ["email", "whatsapp", "sms"]
         : [config.channel];
 
       for (const ch of channels) {
+        if (stopRef.current) break;
         try {
           let success = false;
           if (ch === "email" && inv.customerEmail) {
@@ -197,15 +192,10 @@ export function useAutomationScheduler() {
             if (success) smsSent++;
           }
           if (!success) failed++;
-        } catch {
-          failed++;
-        }
-
-        // Small delay between sends
+        } catch { failed++; }
         await new Promise((r) => setTimeout(r, 1500));
       }
 
-      // Update reminder count
       updateInvoice(inv.id, {
         remindersSent: (inv.remindersSent || 0) + 1,
         lastReminderDate: new Date().toISOString().split("T")[0],
@@ -218,12 +208,13 @@ export function useAutomationScheduler() {
     if (emailSent) parts.push(`${emailSent} emails`);
     if (waSent) parts.push(`${waSent} WhatsApp`);
     if (smsSent) parts.push(`${smsSent} SMS`);
-    toast.success(`Automation complete: Sent ${parts.join(", ")}${failed ? ` (${failed} failed)` : ""}`);
+    toast.success(`Automation ${stopRef.current ? "stopped" : "complete"}: Sent ${parts.join(", ")}${failed ? ` (${failed} failed)` : ""}`);
 
     runningRef.current = false;
+    setIsRunning(false);
   }, [invoices, updateInvoice, getBusinessName, sendEmailSmtp, sendWhatsApp, sendSms]);
 
-  // Check every minute if it's time to run
+  // Check every minute
   useEffect(() => {
     const interval = setInterval(() => {
       const config = getConfig();
@@ -231,10 +222,21 @@ export function useAutomationScheduler() {
       if (isTimeToRun(config) && shouldRunToday(config)) {
         runAutomation();
       }
-    }, 60000); // check every minute
-
+    }, 60000);
     return () => clearInterval(interval);
   }, [runAutomation]);
 
-  return { runAutomation, getConfig };
+  // Keyboard shortcut: Ctrl+C to stop
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "c" && runningRef.current) {
+        e.preventDefault();
+        stopAutomation();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [stopAutomation]);
+
+  return { runAutomation, stopAutomation, isRunning, getConfig };
 }

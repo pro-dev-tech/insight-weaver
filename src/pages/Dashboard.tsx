@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInvoiceData } from "@/contexts/InvoiceDataContext";
 import { motion } from "framer-motion";
 import {
@@ -8,7 +8,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { AppTour } from "@/components/AppTour";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, Tooltip,
@@ -40,7 +41,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function Dashboard() {
   const { invoices, customers, hasData } = useInvoiceData();
   const navigate = useNavigate();
+  const location = useLocation();
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.showTour) {
+      setTourOpen(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   if (!hasData) {
     return (
@@ -233,6 +243,7 @@ export default function Dashboard() {
           {expandedChart && renderChart(expandedChart, 450)}
         </DialogContent>
       </Dialog>
+      <AppTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 }
