@@ -119,6 +119,7 @@ export default function UploadPage() {
   const handleConnectGSheet = () => {
     if (!gsheetId) { toast.error("Enter a Google Sheet ID"); return; }
     if (!gsheetToken) { toast.error("Enter your OAuth access token"); return; }
+    localStorage.setItem("payrecovery_gsheet_token", gsheetToken);
     connectGoogleSheet(gsheetId, gsheetToken);
     setGsheetDialogOpen(false);
     toast.success("Google Sheet connected!");
