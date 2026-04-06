@@ -32,7 +32,6 @@ export function useDataset() {
     try {
       const m = await uploadFile(file, setUploadProgress);
       setMeta(m);
-      toast.success("File uploaded successfully!");
 
       // Load all data in parallel
       setLoading(true);
@@ -47,7 +46,7 @@ export function useDataset() {
       setCorrelations(summaryData.correlations);
       setCharts(chartData);
       setInsights(insightData);
-      toast.success("Analysis complete!");
+      toast.success("File uploaded & analysis complete!");
     } catch (err: any) {
       const msg = err?.response?.data?.error || err.message || "Upload failed";
       setError(msg);
