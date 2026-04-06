@@ -274,7 +274,7 @@ export default function Landing() {
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Everything you need to{" "}
-              <span className="shimmer-text">get paid faster</span>
+              <HighlightedText lineCount={6}>get paid faster</HighlightedText>
             </motion.h2>
             <motion.p
               className="text-muted-foreground max-w-xl mx-auto text-base"
