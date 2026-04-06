@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDataset } from "@/hooks/useDataset";
 import { useInvoiceData } from "@/contexts/InvoiceDataContext";
 import { DatasetPreview } from "@/components/DatasetPreview";
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 import type { Invoice } from "@/types";
 
 export default function UploadPage() {
+  const navigate = useNavigate();
   const {
     meta, preview, stats, charts, insights,
     uploading, uploadProgress, loading, error,
@@ -69,19 +71,11 @@ export default function UploadPage() {
   const handleProcessMultiFiles = async () => {
     setMultiUploading(true);
     try {
-      if (multiMode === "merge") {
-        // Upload all files sequentially and merge into same dataset
-        for (const file of multiFiles) {
-          await baseHandleUpload(file);
-        }
-        toast.success(`${multiFiles.length} files merged and uploaded!`);
-      } else {
-        // Upload each separately — for now upload the first
-        for (const file of multiFiles) {
-          await baseHandleUpload(file);
-        }
-        toast.success(`${multiFiles.length} files uploaded separately!`);
+      for (const file of multiFiles) {
+        await baseHandleUpload(file);
       }
+      toast.success(`${multiFiles.length} files ${multiMode === "merge" ? "merged and " : ""}uploaded!`);
+      navigate("/dashboard");
     } catch {
       toast.error("Multi-file upload failed");
     } finally {
@@ -95,6 +89,7 @@ export default function UploadPage() {
     if (!preview || !meta) return;
     setInvoicesFromUpload(preview.rows, meta.fileName);
     toast.success(`${preview.rows.length} records loaded into the system!`);
+    navigate("/dashboard");
   };
 
   const handleDeleteDataset = () => {
@@ -124,6 +119,7 @@ export default function UploadPage() {
   const handleConnectGSheet = () => {
     if (!gsheetId) { toast.error("Enter a Google Sheet ID"); return; }
     if (!gsheetToken) { toast.error("Enter your OAuth access token"); return; }
+    localStorage.setItem("payrecovery_gsheet_token", gsheetToken);
     connectGoogleSheet(gsheetId, gsheetToken);
     setGsheetDialogOpen(false);
     toast.success("Google Sheet connected!");
@@ -132,8 +128,13 @@ export default function UploadPage() {
   const handleSyncGSheet = async () => {
     setSyncing(true);
     try {
-      await syncGoogleSheet();
-      toast.success("Google Sheet synced!");
+      const result = await syncGoogleSheet();
+      if (result && typeof result === "object") {
+        toast.success(`Synced: ${result.newCount} new rows, ${result.removedCount} removed`);
+      } else {
+        toast.success("Google Sheet synced!");
+      }
+      if (result && (result as any).newCount > 0) navigate("/dashboard");
     } catch {
       toast.error("Sync failed.");
     } finally {

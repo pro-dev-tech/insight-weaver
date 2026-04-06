@@ -195,13 +195,14 @@ export default function Landing() {
             className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6"
             initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
+            <span className="text-foreground">Invoicing that </span>
             <span className="relative inline-block">
               <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent whitespace-nowrap">
-                Invoicing that moves as fast
+                moves as fast
               </span>
               <StrikingLines />
             </span>
-            <br />as your business
+            <br /><span className="text-foreground">as your business</span>
           </motion.h1>
           <motion.p
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
@@ -254,17 +255,17 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium text-accent mb-4"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
-              Features
+              <Zap className="w-3 h-3" /> Features
             </motion.div>
             <motion.h2
               className="text-3xl md:text-5xl font-bold mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Everything you need to{" "}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">get paid faster</span>
+              <span className="shimmer-text">get paid faster</span>
             </motion.h2>
             <motion.p
               className="text-muted-foreground max-w-xl mx-auto text-base"
@@ -285,17 +286,17 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto relative z-10">
           <div className="text-center mb-16">
             <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-4"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
-              How it works
+              <Zap className="w-3 h-3" /> How it works
             </motion.div>
             <motion.h2
               className="text-3xl md:text-5xl font-bold mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Up and running in{" "}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">3 simple steps</span>
+              <span className="shimmer-text">3 simple steps</span>
             </motion.h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -325,14 +326,14 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-4"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
-              Pricing
+              <Zap className="w-3 h-3" /> Pricing
             </motion.div>
             <motion.h2 className="text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
               Simple, transparent{" "}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">pricing</span>
+              <span className="shimmer-text">pricing</span>
             </motion.h2>
             <motion.p className="text-muted-foreground text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
               No hidden fees. No surprises. Cancel anytime.
@@ -386,10 +387,10 @@ export default function Landing() {
         </div>
         <div className="max-w-4xl mx-auto relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium text-accent mb-4">
-              About Us
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm">
+              <Zap className="w-3 h-3" /> About Us
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">About <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Invoice Flow</span></h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">About <span className="shimmer-text">Invoice Flow</span></h2>
             <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-base">
               We're a team of finance and technology professionals who believe that every business — from solo freelancers to growing enterprises —
               deserves world-class invoicing tools. Invoice Flow was born from the frustration of clunky billing systems and the vision of making

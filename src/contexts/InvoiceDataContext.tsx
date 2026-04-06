@@ -23,7 +23,7 @@ interface InvoiceDataContextType {
   disconnectGoogleSheet: () => void;
   googleSheetConnected: boolean;
   googleSheetId: string | null;
-  syncGoogleSheet: () => Promise<void>;
+  syncGoogleSheet: () => Promise<{ newCount: number; removedCount: number } | void>;
 }
 
 const InvoiceDataContext = createContext<InvoiceDataContextType | null>(null);
@@ -316,9 +316,28 @@ export function InvoiceDataProvider({ children }: { children: ReactNode }) {
     setGoogleSheetConnected(false);
   }, []);
   const syncGoogleSheet = useCallback(async () => {
-    // TODO: implement via Supabase edge function
-    throw new Error("Google Sheet sync not yet implemented with Supabase");
-  }, []);
+    if (!googleSheetId || !userId) throw new Error("No Google Sheet connected");
+    const accessToken = localStorage.getItem("payrecovery_gsheet_token") || "";
+    const existingHashes: string[] = JSON.parse(localStorage.getItem("payrecovery_gsheet_hashes") || "[]");
+
+    const res = await fetch("http://localhost:3001/api/gsheet/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sheetId: googleSheetId, accessToken, existingHashes }),
+    });
+
+    if (!res.ok) throw new Error("Sync failed");
+    const data = await res.json();
+
+    // Store hashes for next diff
+    localStorage.setItem("payrecovery_gsheet_hashes", JSON.stringify(data.allHashes || []));
+
+    if (data.newRows && data.newRows.length > 0) {
+      await setInvoicesFromUpload(data.newRows, `GSheet-${googleSheetId}`);
+    }
+
+    return { newCount: data.newCount, removedCount: data.removedCount };
+  }, [googleSheetId, userId, setInvoicesFromUpload]);
 
   return (
     <InvoiceDataContext.Provider
