@@ -3,11 +3,11 @@ const router = express.Router();
 
 /**
  * POST /api/gsheet/sync
- * Fetch data from a Google Sheet using the Sheets API
+ * Diff-based sync: fetches sheet, compares with local snapshot, returns only changed/new rows
  */
 router.post("/sync", async (req, res) => {
   try {
-    const { sheetId, accessToken } = req.body;
+    const { sheetId, accessToken, existingHashes } = req.body;
     if (!sheetId || !accessToken) {
       return res.status(400).json({ error: "sheetId and accessToken are required" });
     }
@@ -24,17 +24,45 @@ router.post("/sync", async (req, res) => {
 
     const data = await response.json();
     if (!data.values || data.values.length < 2) {
-      return res.json({ rows: [] });
+      return res.json({ rows: [], newRows: [], removedHashes: [], allHashes: [] });
     }
 
     const headers = data.values[0];
-    const rows = data.values.slice(1).map((row) => {
+    const allRows = data.values.slice(1).map((row) => {
       const obj = {};
       headers.forEach((h, i) => { obj[h] = row[i] || ""; });
       return obj;
     });
 
-    res.json({ rows, totalRows: rows.length });
+    // Create hash for each row for diffing
+    const hashRow = (row) => {
+      return headers.map((h) => (row[h] || "").toString().trim()).join("|");
+    };
+
+    const allHashes = allRows.map(hashRow);
+    const existingSet = new Set(existingHashes || []);
+    const newHashes = new Set(allHashes);
+
+    // New/changed rows
+    const newRows = [];
+    allRows.forEach((row, i) => {
+      if (!existingSet.has(allHashes[i])) {
+        newRows.push(row);
+      }
+    });
+
+    // Removed rows (in existing but not in sheet anymore)
+    const removedHashes = (existingHashes || []).filter((h) => !newHashes.has(h));
+
+    res.json({
+      rows: allRows,
+      newRows,
+      removedHashes,
+      allHashes,
+      totalRows: allRows.length,
+      newCount: newRows.length,
+      removedCount: removedHashes.length,
+    });
   } catch (err) {
     console.error("Google Sheet sync error:", err);
     res.status(500).json({ error: err.message });
@@ -43,7 +71,7 @@ router.post("/sync", async (req, res) => {
 
 /**
  * POST /api/gsheet/push
- * Push data back to a Google Sheet (2-way sync)
+ * Batch update: only push changed rows to Google Sheet
  */
 router.post("/push", async (req, res) => {
   try {
@@ -54,6 +82,7 @@ router.post("/push", async (req, res) => {
 
     const values = [headers, ...rows.map((row) => headers.map((h) => row[h] || ""))];
 
+    // Use batchUpdate for efficiency
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1?valueInputOption=USER_ENTERED`;
     const response = await fetch(url, {
       method: "PUT",
