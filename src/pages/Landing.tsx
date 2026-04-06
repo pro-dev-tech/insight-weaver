@@ -103,8 +103,8 @@ function ScrollProgressBar() {
   );
 }
 
-// Fast striking lines effect
-function StrikingLines() {
+// Fast striking lines effect — reusable for any inline text
+function StrikingLines({ lineCount = 12 }: { lineCount?: number }) {
   const lines = [
     { top: "5%", width: "160px", duration: 0.4, delay: 0, opacity: 0.6 },
     { top: "15%", width: "200px", duration: 0.35, delay: 0.2, opacity: 0.5 },
@@ -118,7 +118,7 @@ function StrikingLines() {
     { top: "95%", width: "210px", duration: 0.32, delay: 0.6, opacity: 0.4 },
     { top: "10%", width: "100px", duration: 0.28, delay: 0.7, opacity: 0.35 },
     { top: "45%", width: "240px", duration: 0.33, delay: 0.5, opacity: 0.3 },
-  ];
+  ].slice(0, lineCount);
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {lines.map((l, i) => (
@@ -131,6 +131,18 @@ function StrikingLines() {
         />
       ))}
     </div>
+  );
+}
+
+// Inline highlighted text with orange color + striking lines
+function HighlightedText({ children, lineCount = 6 }: { children: React.ReactNode; lineCount?: number }) {
+  return (
+    <span className="relative inline-block">
+      <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+        {children}
+      </span>
+      <StrikingLines lineCount={lineCount} />
+    </span>
   );
 }
 
@@ -190,17 +202,14 @@ export default function Landing() {
           <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent/5 blur-[120px]" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/3 blur-[150px]" />
         </div>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
+        <div className="max-w-5xl mx-auto text-left relative z-10">
           <motion.h1
             className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6"
             initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
-            <span className="text-foreground">Invoicing that </span>
-            <span className="relative inline-block">
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent whitespace-nowrap">
-                moves as fast
-              </span>
-              <StrikingLines />
+            <span className="whitespace-nowrap">
+              <span className="text-foreground">Invoicing that </span>
+              <HighlightedText lineCount={12}>moves as fast</HighlightedText>
             </span>
             <br /><span className="text-foreground">as your business</span>
           </motion.h1>
@@ -265,7 +274,7 @@ export default function Landing() {
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Everything you need to{" "}
-              <span className="shimmer-text">get paid faster</span>
+              <HighlightedText lineCount={6}>get paid faster</HighlightedText>
             </motion.h2>
             <motion.p
               className="text-muted-foreground max-w-xl mx-auto text-base"
@@ -296,7 +305,7 @@ export default function Landing() {
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Up and running in{" "}
-              <span className="shimmer-text">3 simple steps</span>
+              <HighlightedText lineCount={6}>3 simple steps</HighlightedText>
             </motion.h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -333,7 +342,7 @@ export default function Landing() {
             </motion.div>
             <motion.h2 className="text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
               Simple, transparent{" "}
-              <span className="shimmer-text">pricing</span>
+              <HighlightedText lineCount={6}>pricing</HighlightedText>
             </motion.h2>
             <motion.p className="text-muted-foreground text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
               No hidden fees. No surprises. Cancel anytime.
@@ -390,7 +399,7 @@ export default function Landing() {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm">
               <Zap className="w-3 h-3" /> About Us
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">About <span className="shimmer-text">Invoice Flow</span></h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">About Invoice{" "}<HighlightedText lineCount={6}>Flow</HighlightedText></h2>
             <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-base">
               We're a team of finance and technology professionals who believe that every business — from solo freelancers to growing enterprises —
               deserves world-class invoicing tools. Invoice Flow was born from the frustration of clunky billing systems and the vision of making
