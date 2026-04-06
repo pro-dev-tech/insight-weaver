@@ -71,19 +71,11 @@ export default function UploadPage() {
   const handleProcessMultiFiles = async () => {
     setMultiUploading(true);
     try {
-      if (multiMode === "merge") {
-        // Upload all files sequentially and merge into same dataset
-        for (const file of multiFiles) {
-          await baseHandleUpload(file);
-        }
-        toast.success(`${multiFiles.length} files merged and uploaded!`);
-      } else {
-        // Upload each separately — for now upload the first
-        for (const file of multiFiles) {
-          await baseHandleUpload(file);
-        }
-        toast.success(`${multiFiles.length} files uploaded separately!`);
+      for (const file of multiFiles) {
+        await baseHandleUpload(file);
       }
+      toast.success(`${multiFiles.length} files ${multiMode === "merge" ? "merged and " : ""}uploaded!`);
+      navigate("/dashboard");
     } catch {
       toast.error("Multi-file upload failed");
     } finally {
