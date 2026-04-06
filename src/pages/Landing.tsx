@@ -399,7 +399,7 @@ export default function Landing() {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm">
               <Zap className="w-3 h-3" /> About Us
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">About <span className="shimmer-text">Invoice Flow</span></h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">About Invoice{" "}<HighlightedText lineCount={6}>Flow</HighlightedText></h2>
             <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-base">
               We're a team of finance and technology professionals who believe that every business — from solo freelancers to growing enterprises —
               deserves world-class invoicing tools. Invoice Flow was born from the frustration of clunky billing systems and the vision of making
