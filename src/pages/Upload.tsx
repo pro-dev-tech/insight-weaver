@@ -89,6 +89,7 @@ export default function UploadPage() {
     if (!preview || !meta) return;
     setInvoicesFromUpload(preview.rows, meta.fileName);
     toast.success(`${preview.rows.length} records loaded into the system!`);
+    navigate("/dashboard");
   };
 
   const handleDeleteDataset = () => {
