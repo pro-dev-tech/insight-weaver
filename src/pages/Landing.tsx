@@ -195,13 +195,14 @@ export default function Landing() {
             className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6"
             initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
+            <span className="text-foreground">Invoicing that </span>
             <span className="relative inline-block">
               <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent whitespace-nowrap">
-                Invoicing that moves as fast
+                moves as fast
               </span>
               <StrikingLines />
             </span>
-            <br />as your business
+            <br /><span className="text-foreground">as your business</span>
           </motion.h1>
           <motion.p
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
