@@ -255,17 +255,17 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs font-medium text-accent mb-4"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
-              Features
+              <Zap className="w-3 h-3" /> Features
             </motion.div>
             <motion.h2
               className="text-3xl md:text-5xl font-bold mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Everything you need to{" "}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">get paid faster</span>
+              <span className="shimmer-text">get paid faster</span>
             </motion.h2>
             <motion.p
               className="text-muted-foreground max-w-xl mx-auto text-base"
