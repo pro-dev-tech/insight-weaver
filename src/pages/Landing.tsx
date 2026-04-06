@@ -326,14 +326,14 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-4"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
-              Pricing
+              <Zap className="w-3 h-3" /> Pricing
             </motion.div>
             <motion.h2 className="text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
               Simple, transparent{" "}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">pricing</span>
+              <span className="shimmer-text">pricing</span>
             </motion.h2>
             <motion.p className="text-muted-foreground text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
               No hidden fees. No surprises. Cancel anytime.
