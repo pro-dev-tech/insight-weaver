@@ -103,8 +103,8 @@ function ScrollProgressBar() {
   );
 }
 
-// Fast striking lines effect
-function StrikingLines() {
+// Fast striking lines effect — reusable for any inline text
+function StrikingLines({ lineCount = 12 }: { lineCount?: number }) {
   const lines = [
     { top: "5%", width: "160px", duration: 0.4, delay: 0, opacity: 0.6 },
     { top: "15%", width: "200px", duration: 0.35, delay: 0.2, opacity: 0.5 },
@@ -118,7 +118,7 @@ function StrikingLines() {
     { top: "95%", width: "210px", duration: 0.32, delay: 0.6, opacity: 0.4 },
     { top: "10%", width: "100px", duration: 0.28, delay: 0.7, opacity: 0.35 },
     { top: "45%", width: "240px", duration: 0.33, delay: 0.5, opacity: 0.3 },
-  ];
+  ].slice(0, lineCount);
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {lines.map((l, i) => (
@@ -131,6 +131,18 @@ function StrikingLines() {
         />
       ))}
     </div>
+  );
+}
+
+// Inline highlighted text with orange color + striking lines
+function HighlightedText({ children, lineCount = 6 }: { children: React.ReactNode; lineCount?: number }) {
+  return (
+    <span className="relative inline-block">
+      <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+        {children}
+      </span>
+      <StrikingLines lineCount={lineCount} />
+    </span>
   );
 }
 
