@@ -305,7 +305,7 @@ export default function Landing() {
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Up and running in{" "}
-              <span className="shimmer-text">3 simple steps</span>
+              <HighlightedText lineCount={6}>3 simple steps</HighlightedText>
             </motion.h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
