@@ -202,17 +202,14 @@ export default function Landing() {
           <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent/5 blur-[120px]" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/3 blur-[150px]" />
         </div>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
+        <div className="max-w-5xl mx-auto text-left relative z-10">
           <motion.h1
             className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6"
             initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
-            <span className="text-foreground">Invoicing that </span>
-            <span className="relative inline-block">
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent whitespace-nowrap">
-                moves as fast
-              </span>
-              <StrikingLines />
+            <span className="whitespace-nowrap">
+              <span className="text-foreground">Invoicing that </span>
+              <HighlightedText lineCount={12}>moves as fast</HighlightedText>
             </span>
             <br /><span className="text-foreground">as your business</span>
           </motion.h1>
