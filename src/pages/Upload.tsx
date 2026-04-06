@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import type { Invoice } from "@/types";
 
 export default function UploadPage() {
+  const navigate = useNavigate();
   const {
     meta, preview, stats, charts, insights,
     uploading, uploadProgress, loading, error,
