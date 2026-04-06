@@ -23,7 +23,7 @@ interface InvoiceDataContextType {
   disconnectGoogleSheet: () => void;
   googleSheetConnected: boolean;
   googleSheetId: string | null;
-  syncGoogleSheet: () => Promise<void>;
+  syncGoogleSheet: () => Promise<{ newCount: number; removedCount: number } | void>;
 }
 
 const InvoiceDataContext = createContext<InvoiceDataContextType | null>(null);
