@@ -342,7 +342,7 @@ export default function Landing() {
             </motion.div>
             <motion.h2 className="text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
               Simple, transparent{" "}
-              <span className="shimmer-text">pricing</span>
+              <HighlightedText lineCount={6}>pricing</HighlightedText>
             </motion.h2>
             <motion.p className="text-muted-foreground text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
               No hidden fees. No surprises. Cancel anytime.
