@@ -128,8 +128,13 @@ export default function UploadPage() {
   const handleSyncGSheet = async () => {
     setSyncing(true);
     try {
-      await syncGoogleSheet();
-      toast.success("Google Sheet synced!");
+      const result = await syncGoogleSheet();
+      if (result && typeof result === "object") {
+        toast.success(`Synced: ${result.newCount} new rows, ${result.removedCount} removed`);
+      } else {
+        toast.success("Google Sheet synced!");
+      }
+      if (result && (result as any).newCount > 0) navigate("/dashboard");
     } catch {
       toast.error("Sync failed.");
     } finally {
