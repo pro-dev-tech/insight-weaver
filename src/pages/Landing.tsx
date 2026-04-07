@@ -196,7 +196,7 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="relative py-28 md:py-40 px-6">
+      <section className="relative py-16 sm:py-28 md:py-40 px-4 sm:px-6">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full bg-primary/5 blur-[120px]" />
           <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent/5 blur-[120px]" />
@@ -204,37 +204,35 @@ export default function Landing() {
         </div>
         <div className="max-w-5xl mx-auto text-left relative z-10">
           <motion.h1
-            className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6"
             initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
-            <span className="whitespace-nowrap">
-              <span className="text-foreground">Invoicing that </span>
-              <HighlightedText lineCount={12}>moves as fast</HighlightedText>
-            </span>
+            <span className="text-foreground">Invoicing that </span>
+            <HighlightedText lineCount={12}>moves as fast</HighlightedText>
             <br /><span className="text-foreground">as your business</span>
           </motion.h1>
           <motion.p
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
+            className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-8 sm:mb-10 leading-relaxed"
             initial="hidden" animate="visible" variants={fadeUp} custom={1}
           >
             Create stunning invoices, automate payment reminders, and gain powerful insights into your
             cash flow — all from one beautifully simple platform.
           </motion.p>
           <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4"
             initial="hidden" animate="visible" variants={fadeUp} custom={2}
           >
-            <Button size="lg" className="text-base px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
+            <Button size="lg" className="text-sm sm:text-base px-6 sm:px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
                 Start Free — No Card Required <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-base px-8 border-border/60 hover:bg-secondary/50" asChild>
+            <Button size="lg" variant="outline" className="text-sm sm:text-base px-6 sm:px-8 border-border/60 hover:bg-secondary/50" asChild>
               <a href="#features">See How It Works</a>
             </Button>
           </motion.div>
           <motion.div
-            className="mt-16 flex justify-center"
+            className="mt-12 sm:mt-16 flex justify-center"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
           >
             <a href="#stats" className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
