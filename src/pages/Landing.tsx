@@ -260,24 +260,18 @@ export default function Landing() {
       </section>
 
       {/* Features - Infinite Marquee */}
-      <section id="features" className="py-28 px-6">
+      <section id="features" className="py-16 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-            >
-              <Zap className="w-3 h-3" /> Features
-            </motion.div>
+          <div className="text-center mb-10 sm:mb-14">
             <motion.h2
-              className="text-3xl md:text-5xl font-bold mb-4"
+              className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Everything you need to{" "}
               <HighlightedText lineCount={6}>get paid faster</HighlightedText>
             </motion.h2>
             <motion.p
-              className="text-muted-foreground max-w-xl mx-auto text-base"
+              className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}
             >
               A complete invoicing ecosystem designed for modern businesses.
