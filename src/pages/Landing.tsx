@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   FileText, BarChart3, Bell, Shield, Zap, Users, ArrowRight,
   CheckCircle2, TrendingUp, Linkedin, ChevronDown, Briefcase,
+  Upload, Send,
 } from "lucide-react";
 import type { Easing } from "framer-motion";
 
@@ -54,7 +55,38 @@ const pricingPlans = [
   },
 ];
 
-// Marquee component — pure CSS seamless infinite loop
+const stepIcons = [Upload, Send, TrendingUp];
+
+// Animated logo — money flow coin without box
+function AnimatedLogo({ size = 36 }: { size?: number }) {
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      {/* Orbiting ring */}
+      <motion.div
+        className="absolute inset-0 rounded-full border-2 border-primary/30"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        style={{ borderTopColor: "hsl(var(--primary))", borderRightColor: "hsl(var(--accent))" }}
+      />
+      {/* Inner coin */}
+      <motion.div
+        className="relative z-10 flex items-center justify-center"
+        animate={{ rotateY: [0, 360] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="text-primary font-bold" style={{ fontSize: size * 0.45 }}>₹</span>
+      </motion.div>
+      {/* Glow pulse */}
+      <motion.div
+        className="absolute inset-0 rounded-full bg-primary/10"
+        animate={{ scale: [1, 1.4, 1], opacity: [0.2, 0.5, 0.2] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+    </div>
+  );
+}
+
+// Marquee component — pauses on hover
 function FeatureMarquee() {
   const renderCard = (f: typeof features[0], i: number) => (
     <div key={`${f.title}-${i}`} className="flex-shrink-0 w-72 hover:scale-105 hover:-translate-y-2 transition-transform duration-300">
@@ -71,8 +103,8 @@ function FeatureMarquee() {
   );
 
   return (
-    <div className="overflow-hidden py-4">
-      <div className="flex gap-6 animate-marquee-scroll" style={{ width: "max-content" }}>
+    <div className="overflow-hidden py-4 group/marquee">
+      <div className="flex gap-6 animate-marquee-scroll group-hover/marquee:[animation-play-state:paused]" style={{ width: "max-content" }}>
         {features.map((f, i) => renderCard(f, i))}
         {features.map((f, i) => renderCard(f, i + features.length))}
       </div>
@@ -103,7 +135,7 @@ function ScrollProgressBar() {
   );
 }
 
-// Fast striking lines effect — reusable for any inline text
+// Fast striking lines effect
 function StrikingLines({ lineCount = 12 }: { lineCount?: number }) {
   const lines = [
     { top: "5%", width: "160px", duration: 0.4, delay: 0, opacity: 0.6 },
@@ -164,9 +196,7 @@ export default function Landing() {
       <nav className={`sticky top-1 z-50 transition-all duration-300 ${navScrolled ? "bg-background/90 backdrop-blur-xl shadow-sm border-b border-border/50" : "bg-transparent"}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-            </div>
+            <AnimatedLogo size={36} />
             <span className="text-lg sm:text-xl font-bold tracking-tight">Invoice Flow</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
@@ -188,7 +218,7 @@ export default function Landing() {
             <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
-            <Button size="sm" className="text-xs sm:text-sm px-3 sm:px-4 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-md" asChild>
+            <Button size="sm" className="btn-shimmer text-xs sm:text-sm px-3 sm:px-4 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-md" asChild>
               <Link to="/register"><span className="hidden sm:inline">Get Started Free</span><span className="sm:hidden">Start Free</span></Link>
             </Button>
           </div>
@@ -222,38 +252,56 @@ export default function Landing() {
             className="flex flex-col sm:flex-row gap-3 sm:gap-4"
             initial="hidden" animate="visible" variants={fadeUp} custom={2}
           >
-            <Button size="lg" className="text-sm sm:text-base px-6 sm:px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
+            <Button size="lg" className="btn-shimmer text-sm sm:text-base px-6 sm:px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
                 Start Free — No Card Required <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-sm sm:text-base px-6 sm:px-8 border-border/60 hover:bg-secondary/50" asChild>
+            <Button size="lg" variant="outline" className="btn-shimmer text-sm sm:text-base px-6 sm:px-8 border-border/60 hover:bg-secondary/50" asChild>
               <a href="#features">See How It Works</a>
             </Button>
           </motion.div>
           <motion.div
-            className="mt-12 sm:mt-16 flex justify-center"
+            className="mt-12 sm:mt-16 flex justify-start"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
           >
-            <a href="#stats" className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+            <a href="#about" className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
               <ChevronDown className="w-6 h-6 animate-bounce" />
             </a>
           </motion.div>
         </div>
       </section>
 
-      {/* Stats Bar */}
-      <section id="stats" className="border-y border-border/40 bg-card/50 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border/40">
-          {stats.map((s, i) => (
-            <motion.div
-              key={s.label} className="text-center py-10 px-4"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
-            >
-              <p className="text-3xl md:text-4xl font-bold font-mono tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.value}</p>
-              <p className="text-xs font-medium text-muted-foreground mt-1.5 uppercase tracking-wider">{s.label}</p>
-            </motion.div>
-          ))}
+      {/* About Invoice Flow — moved above stats/testimonials */}
+      <section id="about" className="py-16 sm:py-28 px-4 sm:px-6 bg-muted/20 relative">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-primary/3 blur-[120px]" />
+        </div>
+        <div className="max-w-4xl mx-auto relative z-10">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">About Invoice{" "}<HighlightedText lineCount={6}>Flow</HighlightedText></h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-sm sm:text-base">
+              We're a team of finance and technology professionals who believe that every business — from solo freelancers to growing enterprises —
+              deserves world-class invoicing tools. Invoice Flow was born from the frustration of clunky billing systems and the vision of making
+              cash flow management effortless.
+            </p>
+          </motion.div>
+          <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
+            {[
+              { title: "Our Mission", desc: "To eliminate payment delays and empower businesses with intelligent financial automation." },
+              { title: "Our Values", desc: "Transparency, simplicity, and relentless focus on helping businesses grow faster." },
+              { title: "Our Team", desc: "20+ engineers, designers, and finance experts across India building the future of invoicing." },
+            ].map((item, i) => (
+              <motion.div key={item.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
+                <Card className="h-full border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group">
+                  <CardContent className="p-5 sm:p-6">
+                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -279,6 +327,21 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Stats Bar — moved below marquee */}
+      <section id="stats" className="border-y border-border/40 bg-card/50 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border/40">
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.label} className="text-center py-8 sm:py-10 px-4"
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
+            >
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold font-mono tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.value}</p>
+              <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mt-1.5 uppercase tracking-wider">{s.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* How It Works */}
       <section className="py-16 sm:py-28 px-4 sm:px-6 bg-muted/20 relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -296,22 +359,25 @@ export default function Landing() {
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { step: "01", icon: Users, title: "Add Your Clients", desc: "Import your customer list or add them one by one. We'll keep everything organized." },
-              { step: "02", icon: FileText, title: "Create & Send", desc: "Build beautiful invoices with our editor. Add your logo, terms, and send instantly." },
-              { step: "03", icon: TrendingUp, title: "Track & Grow", desc: "Monitor payments in real-time. Get insights to optimize your cash flow." },
-            ].map((s, i) => (
-              <motion.div key={s.step} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <Card className="text-center border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group h-full">
-                  <CardContent className="p-6 sm:p-8">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4 sm:mb-5 group-hover:from-primary/20 group-hover:to-accent/20 group-hover:scale-110 transition-all duration-300">
-                      <span className="text-xl sm:text-2xl font-bold font-mono bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.step}</span>
-                    </div>
-                    <h3 className="font-semibold text-base sm:text-lg mb-2">{s.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+              { icon: Upload, title: "Add Your Clients", desc: "Import your customer list or add them one by one. We'll keep everything organized." },
+              { icon: Send, title: "Create & Send", desc: "Build beautiful invoices with our editor. Add your logo, terms, and send instantly." },
+              { icon: TrendingUp, title: "Track & Grow", desc: "Monitor payments in real-time. Get insights to optimize your cash flow." },
+            ].map((s, i) => {
+              const StepIcon = s.icon;
+              return (
+                <motion.div key={s.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
+                  <Card className="text-center border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group h-full">
+                    <CardContent className="p-6 sm:p-8">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4 sm:mb-5 group-hover:from-primary/20 group-hover:to-accent/20 group-hover:scale-110 transition-all duration-300">
+                        <StepIcon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+                      </div>
+                      <h3 className="font-semibold text-base sm:text-lg mb-2">{s.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -331,74 +397,40 @@ export default function Landing() {
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {pricingPlans.map((plan, i) => (
               <motion.div key={plan.name} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <Card className={`h-full relative transition-all duration-300 group hover:shadow-xl ${plan.highlighted ? "border-primary/50 bg-card shadow-xl shadow-primary/10 scale-[1.02]" : "border-border/40 bg-card/80 hover:border-primary/30 hover:shadow-primary/5"}`}>
-                  {plan.highlighted && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="text-[10px] font-bold px-4 py-1.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground uppercase tracking-wider shadow-lg">
-                        Most Popular
-                      </span>
-                    </div>
-                  )}
-                  <CardContent className="p-6 sm:p-8 flex flex-col h-full">
-                    <h3 className="font-semibold text-lg">{plan.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
-                    <div className="my-5 sm:my-7">
-                      <span className="text-3xl sm:text-4xl font-bold font-mono">{plan.price}</span>
-                      <span className="text-muted-foreground text-sm">{plan.period}</span>
-                    </div>
-                    <ul className="space-y-3 mb-6 sm:mb-8 flex-1">
-                      {plan.features.map((f) => (
-                        <li key={f} className="flex items-start gap-2.5 text-sm">
-                          <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      className={`w-full ${plan.highlighted ? "bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-md" : ""}`}
-                      variant={plan.highlighted ? "default" : "outline"}
-                      asChild
-                    >
-                      <Link to="/register">{plan.cta}</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* About Us */}
-      <section id="about" className="py-28 px-6 bg-muted/20 relative">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-primary/3 blur-[120px]" />
-        </div>
-        <div className="max-w-4xl mx-auto relative z-10">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm">
-              <Zap className="w-3 h-3" /> About Us
-            </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">About Invoice{" "}<HighlightedText lineCount={6}>Flow</HighlightedText></h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-base">
-              We're a team of finance and technology professionals who believe that every business — from solo freelancers to growing enterprises —
-              deserves world-class invoicing tools. Invoice Flow was born from the frustration of clunky billing systems and the vision of making
-              cash flow management effortless.
-            </p>
-          </motion.div>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {[
-              { title: "Our Mission", desc: "To eliminate payment delays and empower businesses with intelligent financial automation." },
-              { title: "Our Values", desc: "Transparency, simplicity, and relentless focus on helping businesses grow faster." },
-              { title: "Our Team", desc: "20+ engineers, designers, and finance experts across India building the future of invoicing." },
-            ].map((item, i) => (
-              <motion.div key={item.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <Card className="h-full border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
-                  </CardContent>
-                </Card>
+                <div className="pricing-card-wrapper group">
+                  <Card className={`h-full relative transition-all duration-300 group-hover:scale-105 group-hover:z-10 group-hover:shadow-2xl ${plan.highlighted ? "border-primary/50 bg-card shadow-xl shadow-primary/10 scale-[1.02]" : "border-border/40 bg-card/80 group-hover:border-transparent"}`}>
+                    {plan.highlighted && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <span className="text-[10px] font-bold px-4 py-1.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground uppercase tracking-wider shadow-lg">
+                          Most Popular
+                        </span>
+                      </div>
+                    )}
+                    <CardContent className="p-6 sm:p-8 flex flex-col h-full">
+                      <h3 className="font-semibold text-lg">{plan.name}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
+                      <div className="my-5 sm:my-7">
+                        <span className="text-3xl sm:text-4xl font-bold font-mono">{plan.price}</span>
+                        <span className="text-muted-foreground text-sm">{plan.period}</span>
+                      </div>
+                      <ul className="space-y-3 mb-6 sm:mb-8 flex-1">
+                        {plan.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2.5 text-sm">
+                            <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <Button
+                        className={`btn-shimmer w-full ${plan.highlighted ? "bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-md" : ""}`}
+                        variant={plan.highlighted ? "default" : "outline"}
+                        asChild
+                      >
+                        <Link to="/register">{plan.cta}</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -420,7 +452,7 @@ export default function Landing() {
               Join thousands of businesses that use Invoice Flow to streamline their billing,
               reduce late payments, and focus on what matters most.
             </p>
-            <Button size="lg" className="text-sm sm:text-base px-8 sm:px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
+            <Button size="lg" className="btn-shimmer text-sm sm:text-base px-8 sm:px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
                 Get Started — It's Free <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
@@ -435,9 +467,7 @@ export default function Landing() {
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-primary-foreground" />
-                </div>
+                <AnimatedLogo size={32} />
                 <span className="font-bold">Invoice Flow</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -454,7 +484,7 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold text-sm mb-3">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#about" className="hover:text-foreground transition-colors">About Us</a></li>
+                <li><a href="#about" className="hover:text-foreground transition-colors">About</a></li>
                 <li>
                   <button onClick={() => setCareerOpen(true)} className="hover:text-foreground transition-colors">
                     Careers

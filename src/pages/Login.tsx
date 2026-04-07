@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MoneyRain } from "@/components/MoneyRain";
-import { Shield, ArrowRight, FileText, Zap, BarChart3, Bell } from "lucide-react";
+import { FullPageLoader } from "@/components/CoinSpinner";
+import { Shield, ArrowRight, ArrowLeft, FileText, Zap, BarChart3, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { motion, type Easing } from "framer-motion";
 
@@ -30,6 +31,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showMoneyRain, setShowMoneyRain] = useState(false);
+  const [showLoader, setShowLoader] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -41,6 +43,7 @@ export default function Login() {
       await login(email, password);
       toast.success("Welcome back!");
       setShowMoneyRain(true);
+      setShowLoader(true);
       const tourDone = localStorage.getItem("invoiceflow_tour_completed");
       setTimeout(() => navigate("/dashboard", { state: { showTour: !tourDone } }), 2500);
     } catch {
@@ -53,6 +56,8 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background flex">
       <MoneyRain active={showMoneyRain} />
+      {showLoader && <FullPageLoader text="Signing you in..." />}
+
       {/* Left panel */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden">
         <div className="absolute inset-0 bg-primary/5" />
@@ -85,7 +90,12 @@ export default function Login() {
 
       {/* Right panel */}
       <div className="flex-1 flex flex-col">
-        <div className="flex justify-end p-4"><ThemeToggle /></div>
+        <div className="flex items-center justify-between p-4">
+          <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
+            <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
+          </Button>
+          <ThemeToggle />
+        </div>
         <div className="flex-1 flex items-center justify-center p-8">
           <motion.div className="w-full max-w-sm space-y-8" initial="hidden" animate="visible" variants={fadeUp} custom={0}>
             <div className="text-center lg:text-left">
