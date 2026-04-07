@@ -282,27 +282,21 @@ export default function Landing() {
       </section>
 
       {/* How It Works */}
-      <section className="py-28 px-6 bg-muted/20 relative">
+      <section className="py-16 sm:py-28 px-4 sm:px-6 bg-muted/20 relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-accent/3 blur-[100px]" />
         </div>
         <div className="max-w-5xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-            >
-              <Zap className="w-3 h-3" /> How it works
-            </motion.div>
+          <div className="text-center mb-10 sm:mb-16">
             <motion.h2
-              className="text-3xl md:text-5xl font-bold mb-4"
+              className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Up and running in{" "}
               <HighlightedText lineCount={6}>3 simple steps</HighlightedText>
             </motion.h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             {[
               { step: "01", icon: Users, title: "Add Your Clients", desc: "Import your customer list or add them one by one. We'll keep everything organized." },
               { step: "02", icon: FileText, title: "Create & Send", desc: "Build beautiful invoices with our editor. Add your logo, terms, and send instantly." },
@@ -310,11 +304,11 @@ export default function Landing() {
             ].map((s, i) => (
               <motion.div key={s.step} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
                 <Card className="text-center border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group h-full">
-                  <CardContent className="p-8">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-5 group-hover:from-primary/20 group-hover:to-accent/20 group-hover:scale-110 transition-all duration-300">
-                      <span className="text-2xl font-bold font-mono bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.step}</span>
+                  <CardContent className="p-6 sm:p-8">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4 sm:mb-5 group-hover:from-primary/20 group-hover:to-accent/20 group-hover:scale-110 transition-all duration-300">
+                      <span className="text-xl sm:text-2xl font-bold font-mono bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.step}</span>
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">{s.title}</h3>
+                    <h3 className="font-semibold text-base sm:text-lg mb-2">{s.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
                   </CardContent>
                 </Card>
