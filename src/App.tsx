@@ -39,11 +39,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
-        Loading...
-      </div>
-    );
+    return <FullPageLoader text="Loading..." />;
   }
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
