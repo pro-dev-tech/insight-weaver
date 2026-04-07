@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   FileText, BarChart3, Bell, Shield, Zap, Users, ArrowRight,
-  CheckCircle2, Clock, TrendingUp, Linkedin, ChevronDown, Briefcase,
+  CheckCircle2, TrendingUp, Linkedin, ChevronDown, Briefcase,
 } from "lucide-react";
 import type { Easing } from "framer-motion";
 
@@ -162,12 +162,12 @@ export default function Landing() {
 
       {/* Nav */}
       <nav className={`sticky top-1 z-50 transition-all duration-300 ${navScrolled ? "bg-background/90 backdrop-blur-xl shadow-sm border-b border-border/50" : "bg-transparent"}`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-              <FileText className="w-5 h-5 text-primary-foreground" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold tracking-tight">Invoice Flow</span>
+            <span className="text-lg sm:text-xl font-bold tracking-tight">Invoice Flow</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors relative group">
@@ -183,20 +183,20 @@ export default function Landing() {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
             </a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
-            <Button size="sm" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-md" asChild>
-              <Link to="/register">Get Started Free</Link>
+            <Button size="sm" className="text-xs sm:text-sm px-3 sm:px-4 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-md" asChild>
+              <Link to="/register"><span className="hidden sm:inline">Get Started Free</span><span className="sm:hidden">Start Free</span></Link>
             </Button>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="relative py-28 md:py-40 px-6">
+      <section className="relative py-16 sm:py-28 md:py-40 px-4 sm:px-6">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full bg-primary/5 blur-[120px]" />
           <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent/5 blur-[120px]" />
@@ -204,37 +204,35 @@ export default function Landing() {
         </div>
         <div className="max-w-5xl mx-auto text-left relative z-10">
           <motion.h1
-            className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6"
             initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
-            <span className="whitespace-nowrap">
-              <span className="text-foreground">Invoicing that </span>
-              <HighlightedText lineCount={12}>moves as fast</HighlightedText>
-            </span>
+            <span className="text-foreground">Invoicing that </span>
+            <HighlightedText lineCount={12}>moves as fast</HighlightedText>
             <br /><span className="text-foreground">as your business</span>
           </motion.h1>
           <motion.p
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
+            className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-8 sm:mb-10 leading-relaxed"
             initial="hidden" animate="visible" variants={fadeUp} custom={1}
           >
             Create stunning invoices, automate payment reminders, and gain powerful insights into your
             cash flow — all from one beautifully simple platform.
           </motion.p>
           <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4"
             initial="hidden" animate="visible" variants={fadeUp} custom={2}
           >
-            <Button size="lg" className="text-base px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
+            <Button size="lg" className="text-sm sm:text-base px-6 sm:px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
                 Start Free — No Card Required <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-base px-8 border-border/60 hover:bg-secondary/50" asChild>
+            <Button size="lg" variant="outline" className="text-sm sm:text-base px-6 sm:px-8 border-border/60 hover:bg-secondary/50" asChild>
               <a href="#features">See How It Works</a>
             </Button>
           </motion.div>
           <motion.div
-            className="mt-16 flex justify-center"
+            className="mt-12 sm:mt-16 flex justify-center"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
           >
             <a href="#stats" className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
@@ -260,24 +258,18 @@ export default function Landing() {
       </section>
 
       {/* Features - Infinite Marquee */}
-      <section id="features" className="py-28 px-6">
+      <section id="features" className="py-16 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-            >
-              <Zap className="w-3 h-3" /> Features
-            </motion.div>
+          <div className="text-center mb-10 sm:mb-14">
             <motion.h2
-              className="text-3xl md:text-5xl font-bold mb-4"
+              className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Everything you need to{" "}
               <HighlightedText lineCount={6}>get paid faster</HighlightedText>
             </motion.h2>
             <motion.p
-              className="text-muted-foreground max-w-xl mx-auto text-base"
+              className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}
             >
               A complete invoicing ecosystem designed for modern businesses.
@@ -288,27 +280,21 @@ export default function Landing() {
       </section>
 
       {/* How It Works */}
-      <section className="py-28 px-6 bg-muted/20 relative">
+      <section className="py-16 sm:py-28 px-4 sm:px-6 bg-muted/20 relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-accent/3 blur-[100px]" />
         </div>
         <div className="max-w-5xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-            >
-              <Zap className="w-3 h-3" /> How it works
-            </motion.div>
+          <div className="text-center mb-10 sm:mb-16">
             <motion.h2
-              className="text-3xl md:text-5xl font-bold mb-4"
+              className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4"
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
             >
               Up and running in{" "}
               <HighlightedText lineCount={6}>3 simple steps</HighlightedText>
             </motion.h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             {[
               { step: "01", icon: Users, title: "Add Your Clients", desc: "Import your customer list or add them one by one. We'll keep everything organized." },
               { step: "02", icon: FileText, title: "Create & Send", desc: "Build beautiful invoices with our editor. Add your logo, terms, and send instantly." },
@@ -316,11 +302,11 @@ export default function Landing() {
             ].map((s, i) => (
               <motion.div key={s.step} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
                 <Card className="text-center border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group h-full">
-                  <CardContent className="p-8">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-5 group-hover:from-primary/20 group-hover:to-accent/20 group-hover:scale-110 transition-all duration-300">
-                      <span className="text-2xl font-bold font-mono bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.step}</span>
+                  <CardContent className="p-6 sm:p-8">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4 sm:mb-5 group-hover:from-primary/20 group-hover:to-accent/20 group-hover:scale-110 transition-all duration-300">
+                      <span className="text-xl sm:text-2xl font-bold font-mono bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.step}</span>
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">{s.title}</h3>
+                    <h3 className="font-semibold text-base sm:text-lg mb-2">{s.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
                   </CardContent>
                 </Card>
@@ -331,24 +317,18 @@ export default function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-28 px-6">
+      <section id="pricing" className="py-16 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-            >
-              <Zap className="w-3 h-3" /> Pricing
-            </motion.div>
-            <motion.h2 className="text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
+          <div className="text-center mb-10 sm:mb-16">
+            <motion.h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
               Simple, transparent{" "}
               <HighlightedText lineCount={6}>pricing</HighlightedText>
             </motion.h2>
-            <motion.p className="text-muted-foreground text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
+            <motion.p className="text-muted-foreground text-sm sm:text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
               No hidden fees. No surprises. Cancel anytime.
             </motion.p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {pricingPlans.map((plan, i) => (
               <motion.div key={plan.name} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
                 <Card className={`h-full relative transition-all duration-300 group hover:shadow-xl ${plan.highlighted ? "border-primary/50 bg-card shadow-xl shadow-primary/10 scale-[1.02]" : "border-border/40 bg-card/80 hover:border-primary/30 hover:shadow-primary/5"}`}>
@@ -359,14 +339,14 @@ export default function Landing() {
                       </span>
                     </div>
                   )}
-                  <CardContent className="p-8 flex flex-col h-full">
+                  <CardContent className="p-6 sm:p-8 flex flex-col h-full">
                     <h3 className="font-semibold text-lg">{plan.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
-                    <div className="my-7">
-                      <span className="text-4xl font-bold font-mono">{plan.price}</span>
+                    <div className="my-5 sm:my-7">
+                      <span className="text-3xl sm:text-4xl font-bold font-mono">{plan.price}</span>
                       <span className="text-muted-foreground text-sm">{plan.period}</span>
                     </div>
-                    <ul className="space-y-3 mb-8 flex-1">
+                    <ul className="space-y-3 mb-6 sm:mb-8 flex-1">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-sm">
                           <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
@@ -426,24 +406,21 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="py-28 px-6 relative overflow-hidden">
+      <section className="py-16 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/5 blur-[120px]" />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center mx-auto mb-8">
-              <Clock className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
               Stop chasing payments.<br />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Start growing your business.</span>
             </h2>
-            <p className="text-muted-foreground mb-10 max-w-lg mx-auto text-base">
+            <p className="text-muted-foreground mb-8 sm:mb-10 max-w-lg mx-auto text-sm sm:text-base">
               Join thousands of businesses that use Invoice Flow to streamline their billing,
               reduce late payments, and focus on what matters most.
             </p>
-            <Button size="lg" className="text-base px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
+            <Button size="lg" className="text-sm sm:text-base px-8 sm:px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
                 Get Started — It's Free <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
@@ -454,9 +431,9 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="border-t border-border/40 bg-card/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-14">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-            <div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+            <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                   <FileText className="w-4 h-4 text-primary-foreground" />
