@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { FullPageLoader } from "@/components/CoinSpinner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -27,11 +28,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
-        Checking session...
-      </div>
-    );
+    return <FullPageLoader text="Checking session..." />;
   }
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -42,11 +39,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
-        Loading...
-      </div>
-    );
+    return <FullPageLoader text="Loading..." />;
   }
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;

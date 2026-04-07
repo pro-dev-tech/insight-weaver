@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Shield, ArrowRight, Mail } from "lucide-react";
+import { Shield, ArrowRight, ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { motion, type Easing } from "framer-motion";
 
@@ -64,7 +64,10 @@ export default function Register() {
   if (registered) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <div className="flex justify-end p-4">
+        <div className="flex items-center justify-between p-4">
+          <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
+            <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
+          </Button>
           <ThemeToggle />
         </div>
         <div className="flex-1 flex items-center justify-center p-8">
@@ -104,7 +107,10 @@ export default function Register() {
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <div className="flex justify-end p-4 relative z-10">
+      <div className="flex items-center justify-between p-4 relative z-10">
+        <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
+          <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
+        </Button>
         <ThemeToggle />
       </div>
 
