@@ -319,24 +319,18 @@ export default function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-28 px-6">
+      <section id="pricing" className="py-16 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs font-semibold text-primary mb-4 backdrop-blur-sm"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-            >
-              <Zap className="w-3 h-3" /> Pricing
-            </motion.div>
-            <motion.h2 className="text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
+          <div className="text-center mb-10 sm:mb-16">
+            <motion.h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
               Simple, transparent{" "}
               <HighlightedText lineCount={6}>pricing</HighlightedText>
             </motion.h2>
-            <motion.p className="text-muted-foreground text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
+            <motion.p className="text-muted-foreground text-sm sm:text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
               No hidden fees. No surprises. Cancel anytime.
             </motion.p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {pricingPlans.map((plan, i) => (
               <motion.div key={plan.name} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
                 <Card className={`h-full relative transition-all duration-300 group hover:shadow-xl ${plan.highlighted ? "border-primary/50 bg-card shadow-xl shadow-primary/10 scale-[1.02]" : "border-border/40 bg-card/80 hover:border-primary/30 hover:shadow-primary/5"}`}>
@@ -347,14 +341,14 @@ export default function Landing() {
                       </span>
                     </div>
                   )}
-                  <CardContent className="p-8 flex flex-col h-full">
+                  <CardContent className="p-6 sm:p-8 flex flex-col h-full">
                     <h3 className="font-semibold text-lg">{plan.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
-                    <div className="my-7">
-                      <span className="text-4xl font-bold font-mono">{plan.price}</span>
+                    <div className="my-5 sm:my-7">
+                      <span className="text-3xl sm:text-4xl font-bold font-mono">{plan.price}</span>
                       <span className="text-muted-foreground text-sm">{plan.period}</span>
                     </div>
-                    <ul className="space-y-3 mb-8 flex-1">
+                    <ul className="space-y-3 mb-6 sm:mb-8 flex-1">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-sm">
                           <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
