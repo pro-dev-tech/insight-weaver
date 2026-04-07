@@ -433,9 +433,9 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="border-t border-border/40 bg-card/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-14">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-            <div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+            <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                   <FileText className="w-4 h-4 text-primary-foreground" />
