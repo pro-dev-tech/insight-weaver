@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   FileText, BarChart3, Bell, Shield, Zap, Users, ArrowRight,
-  CheckCircle2, Clock, TrendingUp, Linkedin, ChevronDown, Briefcase,
+  CheckCircle2, TrendingUp, Linkedin, ChevronDown, Briefcase,
 } from "lucide-react";
 import type { Easing } from "framer-motion";
 
