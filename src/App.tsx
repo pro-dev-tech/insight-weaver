@@ -28,11 +28,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
-        Checking session...
-      </div>
-    );
+    return <FullPageLoader text="Checking session..." />;
   }
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
