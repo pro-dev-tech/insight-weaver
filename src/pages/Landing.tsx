@@ -162,12 +162,12 @@ export default function Landing() {
 
       {/* Nav */}
       <nav className={`sticky top-1 z-50 transition-all duration-300 ${navScrolled ? "bg-background/90 backdrop-blur-xl shadow-sm border-b border-border/50" : "bg-transparent"}`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-              <FileText className="w-5 h-5 text-primary-foreground" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold tracking-tight">Invoice Flow</span>
+            <span className="text-lg sm:text-xl font-bold tracking-tight">Invoice Flow</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors relative group">
@@ -183,13 +183,13 @@ export default function Landing() {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
             </a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
-            <Button size="sm" className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-md" asChild>
-              <Link to="/register">Get Started Free</Link>
+            <Button size="sm" className="text-xs sm:text-sm px-3 sm:px-4 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-md" asChild>
+              <Link to="/register"><span className="hidden sm:inline">Get Started Free</span><span className="sm:hidden">Start Free</span></Link>
             </Button>
           </div>
         </div>
