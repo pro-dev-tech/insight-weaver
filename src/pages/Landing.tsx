@@ -408,24 +408,21 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="py-28 px-6 relative overflow-hidden">
+      <section className="py-16 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/5 blur-[120px]" />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center mx-auto mb-8">
-              <Clock className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
               Stop chasing payments.<br />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Start growing your business.</span>
             </h2>
-            <p className="text-muted-foreground mb-10 max-w-lg mx-auto text-base">
+            <p className="text-muted-foreground mb-8 sm:mb-10 max-w-lg mx-auto text-sm sm:text-base">
               Join thousands of businesses that use Invoice Flow to streamline their billing,
               reduce late payments, and focus on what matters most.
             </p>
-            <Button size="lg" className="text-base px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
+            <Button size="lg" className="text-sm sm:text-base px-8 sm:px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
                 Get Started — It's Free <ArrowRight className="w-4 h-4 ml-1" />
               </Link>
