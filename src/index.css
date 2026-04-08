@@ -158,29 +158,7 @@
   }
 }
 
-/* Shimmer text effect */
-@keyframes shimmer-slide {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-.shimmer-text {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary)) 0%,
-    hsl(var(--accent)) 25%,
-    hsl(var(--foreground)) 50%,
-    hsl(var(--accent)) 75%,
-    hsl(var(--primary)) 100%
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer-slide 3s linear infinite;
-}
-
-/* Button shimmer on hover */
+/* Button shimmer — diagonal sweep, text always visible */
 .btn-shimmer {
   position: relative;
   overflow: hidden;
@@ -188,61 +166,67 @@
 .btn-shimmer::after {
   content: '';
   position: absolute;
-  top: 0;
+  top: -50%;
   left: -100%;
-  width: 100%;
-  height: 100%;
+  width: 60%;
+  height: 200%;
   background: linear-gradient(
-    90deg,
-    transparent 0%,
-    hsla(0, 0%, 100%, 0.15) 50%,
-    transparent 100%
+    115deg,
+    transparent 20%,
+    hsla(0, 0%, 100%, 0.2) 50%,
+    transparent 80%
   );
-  transition: none;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 .btn-shimmer:hover::after {
-  animation: btn-shimmer-slide 0.6s ease-out;
+  opacity: 1;
+  animation: btn-diagonal-shimmer 1.2s ease-in-out infinite;
 }
-@keyframes btn-shimmer-slide {
-  0% { left: -100%; }
-  100% { left: 100%; }
+@keyframes btn-diagonal-shimmer {
+  0% { left: -100%; top: -50%; }
+  100% { left: 150%; top: -50%; }
 }
 
-/* Pricing card rotating border */
-.pricing-card-wrapper {
+/* Pricing card — visible broad border at rest, rotating animation on hover */
+.pricing-card-hover {
   position: relative;
   border-radius: var(--radius);
-  padding: 2px;
-  background: transparent;
+  padding: 3px;
+  background: hsl(var(--border));
   transition: all 0.3s;
 }
-.pricing-card-wrapper::before {
+.pricing-card-hover::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 2px;
-  background: transparent;
+  padding: 3px;
+  background: hsl(var(--border));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s;
+  transition: all 0.3s;
 }
-.pricing-card-wrapper:hover::before {
-  opacity: 1;
+.pricing-card-hover:hover {
+  background: transparent;
+}
+.pricing-card-hover:hover::before {
   background: conic-gradient(
     from var(--border-angle, 0deg),
     hsl(0 0% 100%) 0%,
-    hsl(0 0% 100%) 45%,
+    hsl(0 0% 100% / 0.9) 40%,
     hsl(var(--primary)) 50%,
-    hsl(var(--accent)) 75%,
-    hsl(var(--primary)) 100%
+    hsl(var(--accent)) 70%,
+    hsl(var(--primary) / 0.8) 80%,
+    hsl(0 0% 100% / 0.5) 100%
   );
   animation: rotate-border 2s linear infinite;
+  padding: 3px;
 }
+
 @keyframes rotate-border {
   to { --border-angle: 360deg; }
 }
