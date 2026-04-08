@@ -154,6 +154,10 @@ export default function Notifications() {
 
   const handleSendEmailSmtp = async (inv: Invoice) => {
     if (!inv.customerEmail) { toast.error(`No email for ${inv.customerName}`); return; }
+    if (!smtp.smtpServer || !smtp.smtpPassword) {
+      toast.error("SMTP not configured. Please set up SMTP in the Email tab first.");
+      return;
+    }
     try {
       const body = fillTemplate(emailTemplate, inv);
       const res = await fetch("http://localhost:3001/api/email/send", {
@@ -163,11 +167,15 @@ export default function Notifications() {
           to: inv.customerEmail, subject: `Payment Reminder - Invoice ${inv.invoiceNumber}`, message: body,
         }),
       });
-      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      if (!res.ok) {
+        const hint = data.hint ? `\n${data.hint}` : "";
+        throw new Error(data.error + hint);
+      }
       updateInvoice(inv.id, { remindersSent: (inv.remindersSent || 0) + 1, lastReminderDate: new Date().toISOString().split("T")[0] });
       toast.success(`Email sent to ${inv.customerName}`);
-    } catch {
-      toast.error(`SMTP failed for ${inv.customerName}, opening mailto fallback...`);
+    } catch (err: any) {
+      toast.error(`SMTP failed: ${err.message || "Unknown error"}`, { duration: 6000 });
       handleSendEmailMailto(inv);
     }
   };
