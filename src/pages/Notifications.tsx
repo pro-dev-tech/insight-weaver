@@ -374,7 +374,15 @@ export default function Notifications() {
                       <div className="space-y-1"><Label className="text-xs">SMTP Server</Label><Input placeholder="smtp.gmail.com" value={smtp.smtpServer} onChange={(e) => setSmtp({ ...smtp, smtpServer: e.target.value })} /></div>
                       <div className="space-y-1"><Label className="text-xs">Port</Label><Input placeholder="587" value={smtp.smtpPort} onChange={(e) => setSmtp({ ...smtp, smtpPort: e.target.value })} /></div>
                       <div className="space-y-1"><Label className="text-xs">Username</Label><Input placeholder="store@gmail.com" value={smtp.smtpUsername} onChange={(e) => setSmtp({ ...smtp, smtpUsername: e.target.value })} /></div>
-                      <div className="space-y-1"><Label className="text-xs">App Password</Label><Input type="password" placeholder="xxxx xxxx xxxx xxxx" value={smtp.smtpPassword} onChange={(e) => setSmtp({ ...smtp, smtpPassword: e.target.value })} onCopy={(e) => e.preventDefault()} /></div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">App Password</Label>
+                        <Input type="password" placeholder="abcd efgh ijkl mnop" value={smtp.smtpPassword} onChange={(e) => setSmtp({ ...smtp, smtpPassword: e.target.value })} onCopy={(e) => e.preventDefault()} />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          For Gmail: Use a 16-character <strong>App Password</strong> (with spaces, e.g. "abcd efgh ijkl mnop"). Generate one at{" "}
+                          <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google App Passwords</a>.
+                          Enter it exactly as shown — <strong>with spaces</strong>.
+                        </p>
+                      </div>
                       <div className="flex items-center gap-2 pt-5"><Switch checked={smtp.useTls} onCheckedChange={(v) => setSmtp({ ...smtp, useTls: v })} /><Label className="text-xs">Use TLS</Label></div>
                     </div>
                   </div>
