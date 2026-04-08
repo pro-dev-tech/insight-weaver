@@ -105,8 +105,16 @@ export function useAutomationScheduler() {
           message: body,
         }),
       });
-      return res.ok;
-    } catch { return false; }
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("SMTP error:", data.error, data.hint);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error("SMTP network error:", e);
+      return false;
+    }
   }, []);
 
   const sendWhatsApp = useCallback(async (inv: Invoice, businessName: string) => {

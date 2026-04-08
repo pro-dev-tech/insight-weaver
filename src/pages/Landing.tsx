@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,15 +11,6 @@ import {
   CheckCircle2, TrendingUp, Linkedin, ChevronDown, Briefcase,
   Upload, Send,
 } from "lucide-react";
-import type { Easing } from "framer-motion";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: "easeOut" as Easing },
-  }),
-};
 
 const features = [
   { icon: FileText, title: "Smart Invoicing", desc: "Create, customize, and send professional invoices in seconds. Auto-calculate taxes, discounts, and totals." },
@@ -55,20 +46,16 @@ const pricingPlans = [
   },
 ];
 
-const stepIcons = [Upload, Send, TrendingUp];
-
 // Animated logo — money flow coin without box
 function AnimatedLogo({ size = 36 }: { size?: number }) {
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      {/* Orbiting ring */}
       <motion.div
         className="absolute inset-0 rounded-full border-2 border-primary/30"
         animate={{ rotate: 360 }}
         transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
         style={{ borderTopColor: "hsl(var(--primary))", borderRightColor: "hsl(var(--accent))" }}
       />
-      {/* Inner coin */}
       <motion.div
         className="relative z-10 flex items-center justify-center"
         animate={{ rotateY: [0, 360] }}
@@ -76,7 +63,6 @@ function AnimatedLogo({ size = 36 }: { size?: number }) {
       >
         <span className="text-primary font-bold" style={{ fontSize: size * 0.45 }}>₹</span>
       </motion.div>
-      {/* Glow pulse */}
       <motion.div
         className="absolute inset-0 rounded-full bg-primary/10"
         animate={{ scale: [1, 1.4, 1], opacity: [0.2, 0.5, 0.2] }}
@@ -135,15 +121,15 @@ function ScrollProgressBar() {
   );
 }
 
-// Fast striking lines effect
+// Striking lines — 3 brighter lines
 function StrikingLines({ lineCount = 12 }: { lineCount?: number }) {
   const lines = [
-    { top: "5%", width: "160px", duration: 0.4, delay: 0, opacity: 0.6 },
+    { top: "5%", width: "160px", duration: 0.4, delay: 0, opacity: 0.9 },
     { top: "15%", width: "200px", duration: 0.35, delay: 0.2, opacity: 0.5 },
-    { top: "25%", width: "140px", duration: 0.5, delay: 0.4, opacity: 0.45 },
+    { top: "25%", width: "140px", duration: 0.5, delay: 0.4, opacity: 0.85 },
     { top: "38%", width: "180px", duration: 0.3, delay: 0.1, opacity: 0.55 },
     { top: "50%", width: "220px", duration: 0.45, delay: 0.35, opacity: 0.5 },
-    { top: "62%", width: "130px", duration: 0.38, delay: 0.55, opacity: 0.4 },
+    { top: "62%", width: "130px", duration: 0.38, delay: 0.55, opacity: 0.95 },
     { top: "72%", width: "190px", duration: 0.42, delay: 0.15, opacity: 0.55 },
     { top: "82%", width: "150px", duration: 0.36, delay: 0.45, opacity: 0.5 },
     { top: "90%", width: "170px", duration: 0.48, delay: 0.25, opacity: 0.45 },
@@ -156,7 +142,7 @@ function StrikingLines({ lineCount = 12 }: { lineCount?: number }) {
       {lines.map((l, i) => (
         <motion.div
           key={i}
-          className="absolute h-[2px] bg-gradient-to-r from-transparent via-white to-transparent"
+          className={`absolute bg-gradient-to-r from-transparent via-white to-transparent ${i === 0 || i === 2 || i === 5 ? "h-[3px] shadow-[0_0_8px_rgba(255,255,255,0.8)]" : "h-[2px]"}`}
           style={{ top: l.top, width: l.width, opacity: l.opacity }}
           animate={{ x: [600, -300] }}
           transition={{ duration: l.duration, repeat: Infinity, repeatDelay: 0.6 + l.delay, ease: "easeOut" }}
@@ -166,7 +152,6 @@ function StrikingLines({ lineCount = 12 }: { lineCount?: number }) {
   );
 }
 
-// Inline highlighted text with orange color + striking lines
 function HighlightedText({ children, lineCount = 6 }: { children: React.ReactNode; lineCount?: number }) {
   return (
     <span className="relative inline-block">
@@ -175,6 +160,192 @@ function HighlightedText({ children, lineCount = 6 }: { children: React.ReactNod
       </span>
       <StrikingLines lineCount={lineCount} />
     </span>
+  );
+}
+
+// Slide-in text component
+function SlideInText({ children, from = "left", className = "", delay = 0 }: { children: React.ReactNode; from?: "left" | "right"; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  return (
+    <div ref={ref} className={`overflow-hidden ${className}`}>
+      <motion.div
+        initial={{ x: from === "left" ? "-100%" : "100%", opacity: 0 }}
+        animate={isInView ? { x: 0, opacity: 1 } : {}}
+        transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94], delay }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+// Steps crackers animation
+function StepsSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
+
+  const steps = [
+    { title: "Add Your Clients", desc: "Import your customer list or add them one by one. We'll keep everything organized." },
+    { title: "Create & Send", desc: "Build beautiful invoices with our editor. Add your logo, terms, and send instantly." },
+    { title: "Track & Grow", desc: "Monitor payments in real-time. Get insights to optimize your cash flow." },
+  ];
+
+  // Cards spread out as you scroll
+  const y0 = useTransform(scrollYProgress, [0.1, 0.4, 0.7, 0.9], [80, 0, 0, 80]);
+  const y1 = useTransform(scrollYProgress, [0.1, 0.4, 0.7, 0.9], [80, 0, 0, 80]);
+  const y2 = useTransform(scrollYProgress, [0.1, 0.4, 0.7, 0.9], [80, 0, 0, 80]);
+  const x0 = useTransform(scrollYProgress, [0.1, 0.4, 0.7, 0.9], [100, 0, 0, 100]);
+  const x1 = useTransform(scrollYProgress, [0.1, 0.4, 0.7, 0.9], [0, 0, 0, 0]);
+  const x2 = useTransform(scrollYProgress, [0.1, 0.4, 0.7, 0.9], [-100, 0, 0, -100]);
+  const scale = useTransform(scrollYProgress, [0.1, 0.4, 0.7, 0.9], [0.7, 1, 1, 0.7]);
+  const opacity = useTransform(scrollYProgress, [0.05, 0.2, 0.8, 0.95], [0, 1, 1, 0]);
+
+  const transforms = [
+    { x: x0, y: y0 },
+    { x: x1, y: y1 },
+    { x: x2, y: y2 },
+  ];
+
+  return (
+    <section ref={sectionRef} className="py-16 sm:py-28 px-4 sm:px-6 bg-muted/20 relative min-h-[80vh]">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-accent/3 blur-[100px]" />
+      </div>
+      <div className="max-w-5xl mx-auto relative z-10">
+        <div className="text-center mb-10 sm:mb-16">
+          <SlideInText from="left">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
+              Up and running in{" "}
+              <HighlightedText lineCount={6}>3 simple steps</HighlightedText>
+            </h2>
+          </SlideInText>
+        </div>
+
+        {/* Mini box source */}
+        <div className="relative">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+            {steps.map((s, i) => (
+              <motion.div
+                key={s.title}
+                style={{ x: transforms[i].x, y: transforms[i].y, scale, opacity }}
+              >
+                <Card className="text-center border-2 border-border/60 bg-card/80 backdrop-blur-sm hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group h-full">
+                  <CardContent className="p-6 sm:p-8">
+                    {/* Image placeholder - non-draggable, non-downloadable */}
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4 sm:mb-5 overflow-hidden select-none">
+                      <img
+                        src="/placeholder.svg"
+                        alt=""
+                        className="w-full h-full object-cover pointer-events-none select-none"
+                        draggable={false}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{ WebkitUserDrag: "none" } as React.CSSProperties}
+                      />
+                    </div>
+                    <h3 className="font-semibold text-base sm:text-lg mb-2">{s.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+          {/* Mini box at the bottom */}
+          <motion.div
+            className="mt-8 mx-auto w-20 h-12 rounded-lg border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center"
+            style={{ opacity: useTransform(scrollYProgress, [0.1, 0.3], [1, 0.3]) }}
+          >
+            <span className="text-primary text-lg">📦</span>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Pricing section with merged cards that separate on scroll
+function PricingSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
+
+  // Cards start merged (overlapping), then separate on scroll
+  const x0 = useTransform(scrollYProgress, [0.1, 0.35, 0.65, 0.9], [120, 0, 0, 120]);
+  const x2 = useTransform(scrollYProgress, [0.1, 0.35, 0.65, 0.9], [-120, 0, 0, -120]);
+  const overlap0 = useTransform(scrollYProgress, [0.1, 0.35, 0.65, 0.9], [0.6, 1, 1, 0.6]);
+  const overlap2 = useTransform(scrollYProgress, [0.1, 0.35, 0.65, 0.9], [0.6, 1, 1, 0.6]);
+
+  const cardTransforms = [
+    { x: x0, opacity: overlap0 },
+    { x: 0, opacity: 1 },
+    { x: x2, opacity: overlap2 },
+  ];
+
+  return (
+    <section id="pricing" ref={sectionRef} className="py-16 sm:py-28 px-4 sm:px-6 min-h-[80vh]">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-10 sm:mb-16">
+          <SlideInText from="right">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
+              Simple, transparent{" "}
+              <HighlightedText lineCount={6}>pricing</HighlightedText>
+            </h2>
+          </SlideInText>
+          <motion.p
+            className="text-muted-foreground text-sm sm:text-base"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            No hidden fees. No surprises. Cancel anytime.
+          </motion.p>
+        </div>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
+          {pricingPlans.map((plan, i) => (
+            <motion.div
+              key={plan.name}
+              style={{ x: cardTransforms[i].x, opacity: cardTransforms[i].opacity }}
+              className="flex"
+            >
+              <div className="pricing-card-hover group flex w-full">
+                <Card className={`w-full relative transition-all duration-300 group-hover:scale-105 group-hover:z-10 group-hover:shadow-2xl flex flex-col ${plan.highlighted ? "border-2 border-primary/50 bg-card shadow-xl shadow-primary/10" : "border-2 border-border/60 bg-card/80 group-hover:border-transparent"}`}>
+                  {plan.highlighted && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="text-[10px] font-bold px-4 py-1.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground uppercase tracking-wider shadow-lg">
+                        Most Popular
+                      </span>
+                    </div>
+                  )}
+                  <CardContent className="p-6 sm:p-8 flex flex-col flex-1">
+                    <h3 className="font-semibold text-lg">{plan.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
+                    <div className="my-5 sm:my-7">
+                      <span className="text-3xl sm:text-4xl font-bold font-mono">{plan.price}</span>
+                      <span className="text-muted-foreground text-sm">{plan.period}</span>
+                    </div>
+                    <ul className="space-y-3 mb-6 sm:mb-8 flex-1">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2.5 text-sm">
+                          <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      className={`btn-shimmer w-full ${plan.highlighted ? "bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-md" : ""}`}
+                      variant={plan.highlighted ? "default" : "outline"}
+                      asChild
+                    >
+                      <Link to="/register">{plan.cta}</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -233,24 +404,29 @@ export default function Landing() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/3 blur-[150px]" />
         </div>
         <div className="max-w-5xl mx-auto text-left relative z-10">
-          <motion.h1
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6"
-            initial="hidden" animate="visible" variants={fadeUp} custom={0}
-          >
-            <span className="text-foreground">Invoicing that </span>
-            <HighlightedText lineCount={12}>moves as fast</HighlightedText>
-            <br /><span className="text-foreground">as your business</span>
-          </motion.h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
+            <SlideInText from="left">
+              <span className="text-foreground">Invoicing that </span>
+              <HighlightedText lineCount={12}>moves as fast</HighlightedText>
+            </SlideInText>
+            <SlideInText from="right" delay={0.15}>
+              <span className="text-foreground">as your business</span>
+            </SlideInText>
+          </h1>
           <motion.p
             className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-8 sm:mb-10 leading-relaxed"
-            initial="hidden" animate="visible" variants={fadeUp} custom={1}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
           >
             Create stunning invoices, automate payment reminders, and gain powerful insights into your
             cash flow — all from one beautifully simple platform.
           </motion.p>
           <motion.div
             className="flex flex-col sm:flex-row gap-3 sm:gap-4"
-            initial="hidden" animate="visible" variants={fadeUp} custom={2}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
           >
             <Button size="lg" className="btn-shimmer text-sm sm:text-base px-6 sm:px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20" asChild>
               <Link to="/register">
@@ -272,27 +448,29 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* About Invoice Flow — moved above stats/testimonials */}
+      {/* About Invoice Flow */}
       <section id="about" className="py-16 sm:py-28 px-4 sm:px-6 bg-muted/20 relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full bg-primary/3 blur-[120px]" />
         </div>
         <div className="max-w-4xl mx-auto relative z-10">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="text-center mb-10 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">About Invoice{" "}<HighlightedText lineCount={6}>Flow</HighlightedText></h2>
+          <div className="text-center mb-10 sm:mb-12">
+            <SlideInText from="right">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">About Invoice{" "}<HighlightedText lineCount={6}>Flow</HighlightedText></h2>
+            </SlideInText>
             <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed text-sm sm:text-base">
               We're a team of finance and technology professionals who believe that every business — from solo freelancers to growing enterprises —
               deserves world-class invoicing tools. Invoice Flow was born from the frustration of clunky billing systems and the vision of making
               cash flow management effortless.
             </p>
-          </motion.div>
+          </div>
           <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
             {[
               { title: "Our Mission", desc: "To eliminate payment delays and empower businesses with intelligent financial automation." },
               { title: "Our Values", desc: "Transparency, simplicity, and relentless focus on helping businesses grow faster." },
               { title: "Our Team", desc: "20+ engineers, designers, and finance experts across India building the future of invoicing." },
             ].map((item, i) => (
-              <motion.div key={item.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
+              <motion.div key={item.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
                 <Card className="h-full border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group">
                   <CardContent className="p-5 sm:p-6">
                     <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
@@ -309,16 +487,18 @@ export default function Landing() {
       <section id="features" className="py-16 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10 sm:mb-14">
-            <motion.h2
-              className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-            >
-              Everything you need to{" "}
-              <HighlightedText lineCount={6}>get paid faster</HighlightedText>
-            </motion.h2>
+            <SlideInText from="left">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
+                Everything you need to{" "}
+                <HighlightedText lineCount={6}>get paid faster</HighlightedText>
+              </h2>
+            </SlideInText>
             <motion.p
               className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
             >
               A complete invoicing ecosystem designed for modern businesses.
             </motion.p>
@@ -327,13 +507,16 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Stats Bar — moved below marquee */}
+      {/* Stats Bar */}
       <section id="stats" className="border-y border-border/40 bg-card/50 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border/40">
           {stats.map((s, i) => (
             <motion.div
               key={s.label} className="text-center py-8 sm:py-10 px-4"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
             >
               <p className="text-2xl sm:text-3xl md:text-4xl font-bold font-mono tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{s.value}</p>
               <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mt-1.5 uppercase tracking-wider">{s.label}</p>
@@ -343,99 +526,10 @@ export default function Landing() {
       </section>
 
       {/* How It Works */}
-      <section className="py-16 sm:py-28 px-4 sm:px-6 bg-muted/20 relative">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-accent/3 blur-[100px]" />
-        </div>
-        <div className="max-w-5xl mx-auto relative z-10">
-          <div className="text-center mb-10 sm:mb-16">
-            <motion.h2
-              className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4"
-              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}
-            >
-              Up and running in{" "}
-              <HighlightedText lineCount={6}>3 simple steps</HighlightedText>
-            </motion.h2>
-          </div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
-            {[
-              { icon: Upload, title: "Add Your Clients", desc: "Import your customer list or add them one by one. We'll keep everything organized." },
-              { icon: Send, title: "Create & Send", desc: "Build beautiful invoices with our editor. Add your logo, terms, and send instantly." },
-              { icon: TrendingUp, title: "Track & Grow", desc: "Monitor payments in real-time. Get insights to optimize your cash flow." },
-            ].map((s, i) => {
-              const StepIcon = s.icon;
-              return (
-                <motion.div key={s.title} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                  <Card className="text-center border-border/40 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group h-full">
-                    <CardContent className="p-6 sm:p-8">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4 sm:mb-5 group-hover:from-primary/20 group-hover:to-accent/20 group-hover:scale-110 transition-all duration-300">
-                        <StepIcon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
-                      </div>
-                      <h3 className="font-semibold text-base sm:text-lg mb-2">{s.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <StepsSection />
 
       {/* Pricing */}
-      <section id="pricing" className="py-16 sm:py-28 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10 sm:mb-16">
-            <motion.h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-              Simple, transparent{" "}
-              <HighlightedText lineCount={6}>pricing</HighlightedText>
-            </motion.h2>
-            <motion.p className="text-muted-foreground text-sm sm:text-base" initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={1}>
-              No hidden fees. No surprises. Cancel anytime.
-            </motion.p>
-          </div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {pricingPlans.map((plan, i) => (
-              <motion.div key={plan.name} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={i}>
-                <div className="pricing-card-wrapper group">
-                  <Card className={`h-full relative transition-all duration-300 group-hover:scale-105 group-hover:z-10 group-hover:shadow-2xl ${plan.highlighted ? "border-primary/50 bg-card shadow-xl shadow-primary/10 scale-[1.02]" : "border-border/40 bg-card/80 group-hover:border-transparent"}`}>
-                    {plan.highlighted && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="text-[10px] font-bold px-4 py-1.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground uppercase tracking-wider shadow-lg">
-                          Most Popular
-                        </span>
-                      </div>
-                    )}
-                    <CardContent className="p-6 sm:p-8 flex flex-col h-full">
-                      <h3 className="font-semibold text-lg">{plan.name}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
-                      <div className="my-5 sm:my-7">
-                        <span className="text-3xl sm:text-4xl font-bold font-mono">{plan.price}</span>
-                        <span className="text-muted-foreground text-sm">{plan.period}</span>
-                      </div>
-                      <ul className="space-y-3 mb-6 sm:mb-8 flex-1">
-                        {plan.features.map((f) => (
-                          <li key={f} className="flex items-start gap-2.5 text-sm">
-                            <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-                            <span>{f}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <Button
-                        className={`btn-shimmer w-full ${plan.highlighted ? "bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-md" : ""}`}
-                        variant={plan.highlighted ? "default" : "outline"}
-                        asChild
-                      >
-                        <Link to="/register">{plan.cta}</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* CTA */}
       <section className="py-16 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
@@ -443,11 +537,17 @@ export default function Landing() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/5 blur-[120px]" />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0}>
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
-              Stop chasing payments.<br />
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Start growing your business.</span>
-            </h2>
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <SlideInText from="left">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-1">
+                Stop chasing payments.
+              </h2>
+            </SlideInText>
+            <SlideInText from="right" delay={0.1}>
+              <p className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Start growing your business.</span>
+              </p>
+            </SlideInText>
             <p className="text-muted-foreground mb-8 sm:mb-10 max-w-lg mx-auto text-sm sm:text-base">
               Join thousands of businesses that use Invoice Flow to streamline their billing,
               reduce late payments, and focus on what matters most.
