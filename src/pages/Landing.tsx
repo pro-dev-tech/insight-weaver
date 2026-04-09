@@ -252,10 +252,10 @@ function StepsSection() {
           </div>
           {/* Mini box at the bottom */}
           <motion.div
-            className="mt-8 mx-auto w-20 h-12 rounded-lg border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center"
+            className="mt-8 mx-auto w-32 h-16 rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center"
             style={{ opacity: useTransform(scrollYProgress, [0.1, 0.3], [1, 0.3]) }}
           >
-            <span className="text-primary text-lg">📦</span>
+            <span className="text-xs font-semibold text-primary">How it flows</span>
           </motion.div>
         </div>
       </div>
@@ -308,7 +308,7 @@ function PricingSection() {
               className="flex"
             >
               <div className="pricing-card-hover group flex w-full">
-                <Card className={`w-full relative transition-all duration-300 group-hover:scale-105 group-hover:z-10 group-hover:shadow-2xl flex flex-col ${plan.highlighted ? "border-2 border-primary/50 bg-card shadow-xl shadow-primary/10" : "border-2 border-border/60 bg-card/80 group-hover:border-transparent"}`}>
+                <Card className={`w-full relative transition-all duration-300 group-hover:scale-105 group-hover:z-10 group-hover:shadow-2xl flex flex-col ${plan.highlighted ? "border-2 border-primary/50 bg-card shadow-xl shadow-primary/10" : "border-2 border-white/20 bg-card/80 group-hover:border-transparent"}`}>
                   {plan.highlighted && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <span className="text-[10px] font-bold px-4 py-1.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground uppercase tracking-wider shadow-lg">
@@ -383,6 +383,10 @@ export default function Landing() {
               About
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
             </a>
+            <a href="#demo" className="hover:text-foreground transition-colors relative group">
+              Demo
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+            </a>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
@@ -404,14 +408,11 @@ export default function Landing() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/3 blur-[150px]" />
         </div>
         <div className="max-w-5xl mx-auto text-left relative z-10">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-            <SlideInText from="left">
-              <span className="text-foreground">Invoicing that </span>
-              <HighlightedText lineCount={12}>moves as fast</HighlightedText>
-            </SlideInText>
-            <SlideInText from="right" delay={0.15}>
-              <span className="text-foreground">as your business</span>
-            </SlideInText>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.15] mb-6">
+            <span className="text-foreground">Invoicing that </span>
+            <HighlightedText lineCount={12}>moves as fast</HighlightedText>
+            <br />
+            <span className="text-foreground">as your business</span>
           </h1>
           <motion.p
             className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-8 sm:mb-10 leading-relaxed"
