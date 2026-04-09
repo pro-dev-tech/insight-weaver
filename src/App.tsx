@@ -19,6 +19,7 @@ import UploadPage from "./pages/Upload";
 import Analytics from "./pages/Analytics";
 import SettingsPage from "./pages/Settings";
 import Notifications from "./pages/Notifications";
+import Payments from "./pages/Payments";
 import PaymentPage from "./pages/PaymentPage";
 import NotFound from "./pages/NotFound";
 
@@ -70,6 +71,7 @@ const App = () => (
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/upload" element={<UploadPage />} />
                 <Route path="/analytics" element={<Analytics />} />
+                <Route path="/payments" element={<Payments />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
