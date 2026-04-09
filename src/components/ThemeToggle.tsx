@@ -3,24 +3,21 @@ import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("invoiceflow_theme");
+    return saved ? saved === "dark" : true;
+  });
 
   useEffect(() => {
-    // Start in dark mode for Supabase-inspired feel
-    document.documentElement.classList.add("dark");
-  }, []);
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("invoiceflow_theme", isDark ? "dark" : "light");
+  }, [isDark]);
 
-  const toggle = () => {
-    setIsDark((prev) => {
-      const next = !prev;
-      if (next) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-      return next;
-    });
-  };
+  const toggle = () => setIsDark((prev) => !prev);
 
   return (
     <Button
