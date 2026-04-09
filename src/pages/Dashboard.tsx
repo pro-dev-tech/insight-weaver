@@ -3,13 +3,12 @@ import { useInvoiceData } from "@/contexts/InvoiceDataContext";
 import { motion } from "framer-motion";
 import {
   IndianRupee, AlertTriangle, CheckCircle, TrendingUp,
-  Users, Clock, Upload, Maximize2,
+  Users, Clock, Upload, Maximize2, RefreshCw,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useNavigate, useLocation } from "react-router-dom";
-import { AppTour } from "@/components/AppTour";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, Tooltip,
@@ -41,16 +40,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function Dashboard() {
   const { invoices, customers, hasData } = useInvoiceData();
   const navigate = useNavigate();
-  const location = useLocation();
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
-  const [tourOpen, setTourOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (location.state?.showTour) {
-      setTourOpen(true);
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
+  const handleRefresh = () => {
+    setRefreshing(true);
+    // Trigger a page re-render by forcing state update
+    window.location.reload();
+  };
 
   if (!hasData) {
     return (
@@ -101,8 +98,13 @@ export default function Dashboard() {
     { name: "High", value: customers.filter((c) => c.riskLevel === "high").length, fill: CHART_COLORS[4] },
   ].filter((d) => d.value > 0);
 
+  // Fix: deduplicate overdue invoices by ID
   const recentOverdue = invoices
     .filter((i) => i.status === "overdue")
+    .reduce((acc, inv) => {
+      if (!acc.find(a => a.id === inv.id)) acc.push(inv);
+      return acc;
+    }, [] as typeof invoices)
     .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime())
     .slice(0, 5);
 
@@ -168,9 +170,14 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Payment recovery overview — {invoices.length} invoices from uploaded data</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Payment recovery overview — {invoices.length} invoices from uploaded data</p>
+        </div>
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleRefresh} disabled={refreshing}>
+          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -243,7 +250,6 @@ export default function Dashboard() {
           {expandedChart && renderChart(expandedChart, 450)}
         </DialogContent>
       </Dialog>
-      <AppTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 }
