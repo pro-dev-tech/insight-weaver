@@ -44,8 +44,7 @@ export default function Login() {
       toast.success("Welcome back!");
       setShowMoneyRain(true);
       setShowLoader(true);
-      const tourDone = localStorage.getItem("invoiceflow_tour_completed");
-      setTimeout(() => navigate("/dashboard", { state: { showTour: !tourDone } }), 2500);
+      setTimeout(() => navigate("/dashboard"), 2500);
     } catch {
       toast.error("Login failed");
     } finally {
@@ -91,8 +90,8 @@ export default function Login() {
       {/* Right panel */}
       <div className="flex-1 flex flex-col">
         <div className="flex items-center justify-between p-4">
-          <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
-            <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
           <ThemeToggle />
         </div>
