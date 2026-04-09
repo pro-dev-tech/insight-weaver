@@ -302,6 +302,31 @@ export default function Invoices() {
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
+        {/* Horizontal scroll arrows */}
+        <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-border/30">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs gap-1"
+            onClick={() => {
+              const el = document.querySelector('[data-radix-scroll-area-viewport]');
+              if (el) el.scrollLeft = 0;
+            }}
+          >
+            ← Start
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs gap-1"
+            onClick={() => {
+              const el = document.querySelector('[data-radix-scroll-area-viewport]');
+              if (el) el.scrollLeft = el.scrollWidth;
+            }}
+          >
+            End →
+          </Button>
+        </div>
       </Card>
 
       {/* Edit Dialog */}
