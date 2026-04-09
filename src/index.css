@@ -224,7 +224,7 @@
     hsl(0 0% 100% / 0.5) 100%
   );
   animation: rotate-border 2s linear infinite;
-  padding: 3px;
+  padding: 4px;
 }
 
 @keyframes rotate-border {

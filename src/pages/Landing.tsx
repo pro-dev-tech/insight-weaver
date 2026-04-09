@@ -529,6 +529,29 @@ export default function Landing() {
       {/* How It Works */}
       <StepsSection />
 
+      {/* Demo Section */}
+      <section id="demo" className="py-16 sm:py-24 px-4 sm:px-6 bg-muted/20">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Learn how the Invoice <HighlightedText lineCount={6}>flows</HighlightedText></h2>
+            <p className="text-muted-foreground text-sm sm:text-base">See how Invoice Flow streamlines your entire billing workflow</p>
+          </div>
+          <Card className="overflow-hidden border-2 border-border/60 bg-card/80 backdrop-blur-sm">
+            <CardContent className="p-0">
+              <div className="aspect-video bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center">
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                    <BarChart3 className="w-8 h-8 text-primary" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Demo video coming soon</p>
+                  <p className="text-[10px] text-muted-foreground/60">Video placeholder — upload your demo video</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
       {/* Pricing */}
       <PricingSection />
 
